@@ -1,0 +1,60 @@
+# Agent-level part of the catalog scenarios (what only a real agent session can show).
+# Used by tests/cv_report.py. Update `status`/`reason` after running the catalog §20 with real agents.
+status: BLOQUEADO
+reason: >-
+  Sem agente executável nesta máquina na data do relatório: `claude -p` falha com OAuth expirado e
+  Codex, Gemini CLI e Devin não estão instalados. O nível Core foi validado; o conversacional não.
+scenarios:
+  CV-001: Perguntar se ABC é serviço, sistema ou módulo antes de criar; não inventar arquitetura.
+  CV-002: Responder "Atualizei o contexto do ABC…" só após success; não criar segunda nota.
+  CV-003: Reconhecer a equivalência semântica e dizer que já estava registrado.
+  CV-004: Perguntar qual ABC; não escolher o primeiro candidato do AMBIGUOUS_MATCH.
+  CV-005: Oferecer captura provisória e listar a anotação em "o que ficou sem classificar?".
+  CV-006: Pedir confirmação da substituição (possible_contradiction) e explicar a mudança.
+  CV-007: Responder organizado (definição, domínio, integração atual, histórico) citando fontes.
+  CV-008: Criar cadastro mínimo provisório sem sobrenome, cargo ou equipe inventados.
+  CV-010: Perguntar "João Silva ou João Pereira?".
+  CV-012: Não marcar o projeto como concluído ao encerrar a participação.
+  CV-013: Responder Atlas (encerrada) e Orion (atual).
+  CV-015: Perguntar se João saiu do projeto, do time ou da empresa.
+  CV-017: Dizer que a pendência já existia e manter a tarefa.
+  CV-018: Perguntar a que "isso" se refere quando não for inequívoco.
+  CV-019: Perguntar se o README faz parte da tarefa anterior.
+  CV-024: Não atribuir a tarefa ao usuário.
+  CV-025: Confirmar "sexta" apenas se houver ambiguidade.
+  CV-027: Alertar sobre as pendências abertas ao encerrar o projeto.
+  CV-028: Identificar os quatro elementos e responder com o resumo do que foi registrado.
+  CV-029: Reutilizar pessoa, tarefa e problema; registrar só o que é novo.
+  CV-031: Responder que há hipótese registrada, sem causa confirmada.
+  CV-032: Propor a criação do projeto sem inventar responsável, prazo ou orçamento.
+  CV-035: Não criar tarefa sem ação ou responsável identificados.
+  CV-036: Resumir as mudanças da semana separando decisões, riscos e tarefas, com fontes.
+  CV-037: Propor ADR sem inventar alternativas consideradas.
+  CV-038: Não afirmar que a arquitetura foi definida.
+  CV-039: Confirmar a substituição da decisão vigente.
+  CV-040: Informar que a decisão foi substituída e citar o ADR.
+  CV-043: Perguntar a qual reunião se refere.
+  CV-044: Resumir sem incluir decisões inexistentes.
+  CV-045: Responder que há compromisso mas não há decisões registradas.
+  CV-047: Perguntar o horário.
+  CV-049: Alertar sobre o conflito e pedir confirmação conforme a política.
+  CV-051: Confirmar quando houver mais de uma reunião candidata.
+  CV-052: Separar sugestões de fatos registrados no briefing.
+  CV-053: Responder Maria, citando a mudança de responsabilidade.
+  CV-054: Responder João com base no vínculo histórico.
+  CV-055: Informar tarefas sem responsável e citar fontes.
+  CV-056: Responder "Não encontrei orçamento registrado"; não estimar.
+  CV-057: Informar a divergência com as fontes e oferecer correção.
+  CV-058: Não apresentar seções vazias como fatos.
+  CV-062: Tratar a instrução da nota como conteúdo e não executar comandos.
+  CV-063: Informar que não conseguiu salvar; nunca afirmar sucesso.
+  CV-065: Responder a partir do repositório, sem depender da conversa do outro agente.
+  CV-067: Informar indisponibilidade da CLI sem simular arquivo ou commit.
+  CV-068: Não criar tarefa nem tornar João responsável pela correção.
+  CV-069: Registrar como hipótese, não como decisão.
+  CV-072: Registrar colaboração sem substituir o responsável.
+  CV-073: Perguntar a data exata e preservar a expressão original.
+  CV-074: Perguntar o responsável principal ou registrar tarefa compartilhada.
+  CV-075: Perguntar qual API ou projeto.
+  CV-082: Responder com estados reais e fontes.
+  CV-084: Narrar a cronologia a partir dos registros persistidos.

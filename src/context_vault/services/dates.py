@@ -13,6 +13,7 @@ Weeks start on Monday. Rules:
   the next one) → nearest, `ambiguous: true`; otherwise next week. `<dia> da próxima semana` → next week.
 - `esta semana`, `próxima semana`/`semana que vem`, `este mês`, `próximo mês`: ranges.
 - `fim do mês`, `daqui a N dias`, `em N semanas`, `dia 25`, `25/10`, `25/10/2026`, `2026-10-25`.
+- Vague qualifiers (`começo`, `meados`, `final`, `lá pelo`…) left over → `ambiguous: true` + note.
 - Times: `10h`, `14h30`, `14:30`, `às 10`, `meio-dia`, `3h da tarde`; intervals `das 14h30 às 15h30`.
 """
 
@@ -37,6 +38,10 @@ NUMBERS = {"um": 1, "uma": 1, "dois": 2, "duas": 2, "tres": 3, "quatro": 4, "cin
 FILLERS = {"na", "no", "a", "as", "o", "os", "de", "do", "da", "dos", "das", "em", "para", "pra", "ate", "dia",
            "e", "feira", "pela", "pelo", "proximo", "proxima", "que", "vem", "esta", "este", "nesta", "neste",
            "essa", "esse", "nessa", "nesse", "agora", "hora", "horas", "manha", "tarde", "noite"}
+# Qualifiers that make an expression vague ("começo do mês que vem", "lá pelo meio da semana"): the
+# date is never picked arbitrarily — the result is ambiguous and must be confirmed (CV-073).
+VAGUE = {"comeco", "inicio", "meados", "meio", "final", "fim", "volta", "aproximadamente", "talvez",
+         "uns", "umas", "la", "algum", "alguma", "breve", "logo"}
 
 _WD = r"(segunda|terca|quarta|quinta|sexta|sabado|domingo|seg|ter|qua|qui|sex|sab|dom)(?:[- ]feira)?"
 _NUM = r"(\d+|" + "|".join(NUMBERS) + r")"
@@ -293,6 +298,11 @@ def resolve(expression: str, now: datetime, timezone: str) -> Resolution:
         res.kind = "time"
     if leftover:
         res.unparsed = " ".join(leftover)
+        vague = [w for w in leftover if w in VAGUE]
+        if vague:
+            res.ambiguous = True
+            res.notes.append(f"Expressão vaga ({', '.join(vague)}): confirme uma data exata; nenhum dia foi "
+                             "escolhido arbitrariamente.")
     return res
 
 

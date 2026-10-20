@@ -13,6 +13,7 @@ from ..errors import PermissionDeniedError, VaultError
 from ..models.agenda import AgendaFile
 from ..models.notes import NoteBase, parse_note_meta
 from ..models.tasks import TasksFile
+from ..paths import portability_problem
 from ..storage.frontmatter import parse_document
 from ..storage.layout import TASKS_YAML, missing_layout
 from ..storage.yamlio import load_yaml
@@ -77,6 +78,23 @@ def _check_symlinks(vault: Vault, report: ValidationReport) -> None:
                     )
 
 
+def _check_portability(vault: Vault, report: ValidationReport) -> None:
+    """Names that break on another OS: Windows-reserved/invalid names and case-only collisions."""
+    for root, dirs, files in os.walk(vault.repo):
+        dirs[:] = [d for d in dirs if d != ".git"]
+        base = Path(root).relative_to(vault.repo)
+        seen: dict[str, str] = {}
+        for name in dirs + files:
+            rel = (base / name).as_posix()
+            problem = portability_problem(name)
+            if problem:
+                report.warning("NON_PORTABLE_PATH", rel, problem)
+            other = seen.setdefault(name.casefold(), name)
+            if other != name:
+                report.warning("CASE_COLLISION", rel, f"Difere de \"{other}\" só por maiúsculas/minúsculas "
+                                                     "(colide no macOS e no Windows)", other=(base / other).as_posix())
+
+
 def load_notes(vault: Vault, report: ValidationReport | None = None) -> dict[str, tuple[str, NoteBase]]:
     """Parse every note. Returns {id: (path, meta)}; problems are recorded in `report`."""
     report = report or ValidationReport()
@@ -115,6 +133,7 @@ def validate_repository(vault: Vault) -> ValidationReport:
 
     if vault.config.security.reject_symlink_escape:
         _check_symlinks(vault, report)
+    _check_portability(vault, report)
 
     notes = load_notes(vault, report)
     all_ids: set[str] = set(notes)

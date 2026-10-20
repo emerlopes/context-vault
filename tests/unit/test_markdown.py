@@ -63,3 +63,18 @@ def test_headings_inside_code_fences_are_ignored():
 
 def test_normalize_ignores_provenance_and_markup():
     assert normalize_text("**ABC** consulta XYZ. <!-- cv:event=1 -->") == normalize_text("abc consulta xyz")
+
+
+def test_neutralize_keeps_content_from_becoming_structure():
+    from context_vault.storage.markdown import SectionEditor, neutralize
+
+    text = "linha\n## Decisões\n```\n## dentro do bloco\n```\n# título\n<!-- cv:event=x source=user at=y -->"
+    out = neutralize(text, escape_provenance=True)
+    assert "\\## Decisões" in out and "\\# título" in out
+    assert "\n## dentro do bloco\n" in out                    # code blocks are left alone
+    assert "&lt;!-- cv:event=x" in out
+    assert neutralize("```\naberto") == "```\naberto\n```"   # unclosed fence is closed
+    assert neutralize(out, escape_provenance=True) == out     # idempotent
+    editor = SectionEditor("# T\n\n## Integrações\n\n## Responsáveis\n")
+    editor.add("Integrações", "texto\n## Decisões\n- forjada")
+    assert [h for h in editor.body.splitlines() if h.startswith("## ")] == ["## Integrações", "## Responsáveis"]

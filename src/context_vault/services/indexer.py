@@ -120,3 +120,30 @@ def generate(catalog: Catalog) -> dict[str, str]:
     """Return {relative path: content} for both index files."""
     entries = build_index(catalog)
     return {INDEX_MD: render_index_md(entries), INDEX_JSON: render_index_json(entries)}
+
+
+def index_drift(repo: Any, catalog: Catalog) -> dict[str, list[dict[str, Any]]]:
+    """Differences between the committed `index.json` and the notes on disk (CV-064).
+
+    `missing_files`: indexed notes whose file no longer exists (deleted outside the Core — the content
+    may still be in the Git history); `moved`: same ID at another path; `unindexed`: notes absent from
+    the index. Nothing is discarded here: `index rebuild` fixes the index and reports what it dropped."""
+    path = repo / INDEX_JSON
+    try:
+        indexed = json.loads(path.read_text(encoding="utf-8")).get("entries", []) if path.is_file() else []
+    except (ValueError, AttributeError):
+        indexed = []
+    current = {e.id: e for e in catalog.valid()}
+    seen = {item.get("id") for item in indexed}
+    out: dict[str, list[dict[str, Any]]] = {"missing_files": [], "moved": [], "unindexed": []}
+    for item in indexed:
+        brief = {k: item.get(k) for k in ("id", "title", "type", "path")}
+        entry = current.get(item.get("id"))
+        if entry is None:
+            if not (repo / str(item.get("path", ""))).is_file():
+                out["missing_files"].append(brief)
+        elif entry.path != item.get("path"):
+            out["moved"].append({**brief, "new_path": entry.path})
+    out["unindexed"] = [{"id": e.id, "title": e.title, "type": e.type, "path": e.path}
+                        for e in current.values() if e.id not in seen]
+    return out

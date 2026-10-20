@@ -102,16 +102,40 @@ _HISTORY = re.compile(r"^##\s+hist[oó]rico", re.IGNORECASE)
 
 
 def history_entries(body: str, limit: int = 10) -> list[str]:
-    """Labels of the changes preserved under `## Histórico` (most recent last in the file)."""
+    """Changes preserved under `## Histórico` (most recent last in the file): the label, followed by the
+    previous state and the reason when recorded — "2026-10-20 — Substituído em "X": <antes> (Motivo: …)"."""
     out: list[str] = []
     inside = False
+    quoted: list[str] = []
+    reason: str | None = None
+
+    def flush() -> None:
+        if out and (quoted or reason):
+            detail = " ".join(quoted)
+            out[-1] += (f": {detail}" if detail else "") + (f" (Motivo: {reason})" if reason else "")
+
     for raw in body.split("\n"):
-        line = raw.strip()
+        line = strip_provenance(raw).strip()
         if line.startswith("## "):
+            if inside:
+                flush()
             inside = bool(_HISTORY.match(line))
+            quoted, reason = [], None
             continue
-        if inside and line.startswith("### "):
+        if not inside:
+            continue
+        if line.startswith("### "):
+            flush()
             out.append(line[4:].strip())
+            quoted, reason = [], None
+        elif line.startswith(">"):
+            text = line.lstrip("> ").strip()
+            if text:
+                quoted.append(text[2:] if text.startswith(("- ", "* ")) else text)
+        elif line.lower().startswith("motivo:"):
+            reason = line.split(":", 1)[1].strip()
+    if inside:
+        flush()
     return out[-limit:]
 
 
@@ -176,7 +200,8 @@ def _item(entry: CatalogEntry, label: str, direction: str, current: bool, depth:
     return {k: v for k, v in data.items() if v is not None}
 
 
-def context(vault: Vault, term: str, *, depth: int = 1, include_mentions: bool = True) -> dict[str, Any]:
+def context(vault: Vault, term: str, *, depth: int = 1, include_mentions: bool = True,
+            since: str | None = None) -> dict[str, Any]:
     from ..search.engine import search
     from .reader import members_of
     from .records import load_appointments, load_tasks
@@ -320,8 +345,99 @@ def context(vault: Vault, term: str, *, depth: int = 1, include_mentions: bool =
         out["mentions"] = [{k: h[k] for k in ("id", "title", "type", "path", "snippets") if h.get(k)}
                            for h in hits["results"] if h["id"] not in placed and h.get("snippets")][:5]
 
+    if since:
+        names = {**{t.id: t.title for t in tasks_by_id.values()}, **{i: a.title for i, (_, a) in appts_by_id.items()}}
+        out["changes"] = changes_in_period(vault, catalog, subject, {sid} | set(seen), names, since)
     out["empty_categories"] = [k for k in CATEGORIES if _empty(out.get(k))]
     out["sources"] = _sources(out, subject.path, bool(out["tasks"]["open"]))
+    if since:
+        out["sources"] = list(dict.fromkeys(out["sources"] + out["changes"]["sources"]))
+    return out
+
+
+# ---------------------------------------------------------------- changes in a period (CV-036)
+
+_CHANGE_SECTIONS = {"decisoes": "decisions", "decisao": "decisions", "riscos": "risks", "bloqueios": "blockers",
+                    "marcos": "milestones", "entregas": "milestones", "status atual": "status",
+                    "duvidas em aberto": "questions", "proximos passos": "next_steps"}
+_STRUCTURED = (("bloqueio", "blockers"), ("marco", "milestones"), ("entrega", "milestones"),
+               ("participacao", "people"))
+
+
+def _categories(event: dict[str, Any], target_type: str | None) -> list[str]:
+    op = str(event.get("operation", ""))
+    details = event.get("details") or {}
+    cats: list[str] = []
+    if op.startswith("tasks."):
+        cats.append("tasks")
+    elif op.startswith("agenda."):
+        cats.append("agenda")
+    elif op.startswith("inbox."):
+        cats.append("inbox")
+    if target_type == "architecture_decision":
+        cats.append("decisions")
+    for section in details.get("sections") or []:
+        cat = _CHANGE_SECTIONS.get(normalize_title(str(section)))
+        if cat:
+            cats.append(cat)
+    for item in details.get("structured") or []:
+        text = normalize_title(str(item))
+        cats += [cat for prefix, cat in _STRUCTURED if text.startswith(prefix)]
+    if target_type == "meeting" and not cats:
+        cats.append("meetings")
+    if target_type == "person" and not cats:
+        cats.append("people")
+    return list(dict.fromkeys(cats)) or ["updates"]
+
+
+def changes_in_period(vault: Vault, catalog: Catalog, subject: CatalogEntry, ids: set[str],
+                      names: dict[str, str], period: str) -> dict[str, Any]:
+    """Journal events in `period` about the subject or its neighbors, grouped by category.
+
+    `period` accepts what `dates` resolves ("esta semana", "hoje", "ontem", AAAA-MM-DD). A single day
+    means "from that day until today". Only recorded events are returned — nothing is summarized away."""
+    from .dates import parse_range
+    from .journal import iter_journal_files, parse_journal
+
+    today = vault.now().date()
+    start, end = parse_range(period, vault.now(), vault.timezone)
+    if start == end and start <= today:
+        end = today
+    events: list[dict[str, Any]] = []
+    for file in iter_journal_files(vault.repo):
+        try:
+            day = date.fromisoformat(file.stem)
+        except ValueError:
+            continue
+        if not start <= day <= end:
+            continue
+        for event in parse_journal(file.read_text(encoding="utf-8")):
+            target = str(event.get("target_id") or "")
+            details = event.get("details") or {}
+            if target not in ids and subject.path not in (details.get("related_paths") or []):
+                continue
+            entry = catalog.get(target)
+            target_type = entry.type if entry else None
+            item = {k: v for k, v in {
+                "at": str(event.get("recorded_at")), "operation": event.get("operation"),
+                "categories": _categories(event, target_type), "target_id": target or None,
+                "target": (entry.title if entry else names.get(target)), "target_type": target_type,
+                "summary": event.get("summary"), "sections": details.get("sections"),
+                "structured": details.get("structured"), "reason": details.get("reason"),
+                "source": (event.get("source") or {}).get("type"), "path": event.get("path"),
+                "original_text": (event.get("source") or {}).get("original_text"),
+                "event_id": event.get("event_id")}.items() if v not in (None, [], "")}
+            events.append(item)
+    events.sort(key=lambda e: e["at"])
+    by_category: dict[str, int] = {}
+    for item in events:
+        for cat in item["categories"]:
+            by_category[cat] = by_category.get(cat, 0) + 1
+    out: dict[str, Any] = {"period": {"input": period, "from": start.isoformat(), "to": end.isoformat()},
+                           "events": events, "by_category": by_category,
+                           "sources": list(dict.fromkeys(e["path"] for e in events if e.get("path")))}
+    if not events:
+        out["notice"] = f"Nenhuma alteração registrada sobre \"{subject.title}\" no período."
     return out
 
 

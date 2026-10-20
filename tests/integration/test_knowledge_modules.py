@@ -24,7 +24,7 @@ def _adr(cli, title, rid, **extra):
     ])
 
 
-def test_superseding_adr_marks_previous_and_preserves_justification(cli, vault_repo):
+def test_superseding_adr_marks_previous_and_preserves_justification(cli, vault_repo):  # CV-037, CV-039
     old = _adr(cli, "Integração síncrona entre ABC e XYZ", "adr1", status="accepted")
     proposal = {"request_id": "adr2", "operation": "memory.create",
                 "note": {"type": "architecture_decision", "title": "Integração por eventos entre ABC e XYZ",
@@ -123,7 +123,7 @@ def test_compatible_information_is_not_a_contradiction(cli, vault_repo):
     assert out["changed"] is True
 
 
-def test_hypothesis_is_marked_and_not_treated_as_fact(cli, vault_repo):
+def test_hypothesis_is_marked_and_not_treated_as_fact(cli, vault_repo):  # CV-031
     note = cli.create("domain", "Simulação", entities=["ABC"])
     _upsert(cli, note["record_id"], "h1", changes=[
         {"section": "Problemas", "content": "O ABC está lento."},
@@ -153,7 +153,7 @@ def _orion(cli):
                       changes=[{"section": "Objetivos", "content": "Modernizar o fluxo de pagamentos."}])
 
 
-def test_new_project_does_not_invent_owner_or_dates(cli, vault_repo):
+def test_new_project_does_not_invent_owner_or_dates(cli, vault_repo):  # CV-032
     out = _orion(cli)
     meta = cli("read", out["record_id"])["meta"]
     assert meta["owner"] is None and meta["target_date"] is None and meta["status"] == "planned"
@@ -189,7 +189,7 @@ def test_project_deliveries_with_dates_and_traceable_changes(cli, vault_repo):
     assert listing["next_milestone"]["title"] == "Homologação"
 
 
-def test_project_blocker_lifecycle(cli, vault_repo):
+def test_project_blocker_lifecycle(cli, vault_repo):  # CV-035
     project = _orion(cli)
     env = cli.create("architecture", "Ambiente de homologação")
     out = _upsert(cli, project["record_id"], "b1", blockers=[
@@ -229,7 +229,7 @@ def _people(cli):
     return silva, pereira
 
 
-def test_homonyms_require_disambiguation(cli, vault_repo):
+def test_homonyms_require_disambiguation(cli, vault_repo):  # CV-010
     silva, pereira = _people(cli)
     out = cli("resolve", "João", expect=4)
     assert out["error"]["code"] == "AMBIGUOUS_MATCH"
@@ -241,7 +241,7 @@ def test_homonyms_require_disambiguation(cli, vault_repo):
     assert cli("resolve", "João")["match"]["id"] == silva["record_id"]
 
 
-def test_ambiguous_acronym_and_unknown_subject(cli, vault_repo):
+def test_ambiguous_acronym_and_unknown_subject(cli, vault_repo):  # CV-004
     one = cli.create("domain", "Financiamento", entities=["ABC"])
     two = cli.create("domain", "Cobrança", entities=["ABC"])
     out = cli("resolve", "ABC", expect=4)
@@ -255,7 +255,7 @@ def test_ambiguous_acronym_and_unknown_subject(cli, vault_repo):
     assert two["record_id"]
 
 
-def test_person_project_participation_lifecycle(cli, vault_repo):
+def test_person_project_participation_lifecycle(cli, vault_repo):  # CV-011, CV-012, CV-013
     silva, _ = _people(cli)
     atlas = cli.create("project", "Atlas")
     orion = cli.create("project", "Orion")
@@ -295,7 +295,7 @@ def test_person_project_participation_lifecycle(cli, vault_repo):
     assert cli("validate")["valid"] is True
 
 
-def test_team_change_keeps_history_and_syncs_members(cli, vault_repo):
+def test_team_change_keeps_history_and_syncs_members(cli, vault_repo):  # CV-014
     plataforma = cli.create("team", "Plataforma")
     arquitetura = cli.create("team", "Arquitetura")
     maria = cli.create("person", "Maria")

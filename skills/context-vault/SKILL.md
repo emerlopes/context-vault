@@ -71,7 +71,7 @@ mantenha a informação na conversa e não simule comandos, commits nem resultad
 | Status de projeto, marcos, bloqueios | `projects list/milestones/blockers`; escrita via `propose` |
 | "O que ficou sem classificar?" | `inbox list` → `inbox classify` |
 | "O que falta esclarecer sobre X?" | `gaps list <ref>` |
-| "O que mudou?" | `read <id> --history`, `journal list` |
+| "O que mudou em X (nesta semana)?" | `context X --since "esta semana"`; `read <id> --history`, `journal list --period` |
 
 Convenções de entrada/saída, tipos de nota, seções e códigos de erro: [conventions](references/conventions.md).
 

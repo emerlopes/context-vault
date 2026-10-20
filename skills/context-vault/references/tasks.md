@@ -31,6 +31,9 @@ repositório, escrever, ambos). Não crie duas tarefas por conta própria.
   pessoa é vinculado; homônimos → `AMBIGUOUS_MATCH` (pergunte); nome desconhecido fica só como nome.
   Nunca atribua ao usuário sem ele dizer.
 - **Prazo:** só se informado; aceita expressão relativa. Nada de prazo ou prioridade inventados.
+  Expressão vaga ("começo do mês que vem", "lá pelo meio da semana") não vira data: `dates resolve`
+  devolve `ambiguous: true` com nota de expressão vaga e `due_date` recusa períodos. Pergunte a data
+  exata se o prazo for necessário; senão, guarde a expressão em `note` e deixe `due_date` vazio.
 - **Contexto:** `note` (por que existe, de onde veio), `description`.
 - **Dependência entre tarefas:** `blocked_by: [<id>]` quando a mensagem sustenta a ordem ("Maria escreve
   depois que João criar o repositório").
@@ -39,6 +42,11 @@ repositório, escrever, ambos). Não crie duas tarefas por conta própria.
 ## Duplicatas
 
 - Mesma tarefa aberta (título igual, mesmo responsável) → reconhecida, nada criado: diga que já existia.
+- Mesmo título para **outra pessoa** (`different_assignee`) ou em **outro contexto** — `related_ids` sem
+  nada em comum, ex.: "Validar API" no Atlas e no Orion (`different_context`) → `possible_duplicate`.
+  "João e Maria vão revisar juntos" é **uma** tarefa: pergunte quem é o responsável principal e cite o
+  outro em `note`; não crie duas tarefas iguais. Duas tarefas candidatas para "João concluiu a validação
+  da API" → pergunte qual (projeto/API) antes de `tasks complete`.
 - Parecida → `possible_duplicate` com `candidates`: pergunte se é a mesma; se for, atualize a existente
   com `tasks update` (acrescente `note`, prazo…) em vez de criar.
 - Igual a uma concluída → `repeats_completed_task`: se for nova execução, inclua a antiga em `related_ids`.

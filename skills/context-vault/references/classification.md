@@ -125,6 +125,11 @@ o motivo uma vez; se o usuário não souber, `add_gaps` com `field: decision_rea
   O Core avisa sobre status x bloqueios mas não muda o status do projeto: mude só se o usuário disser.
 - Participação: `memberships: [{action: "start"|"end", kind: "project"|"team", target_id, role, on}]` na nota
   da **pessoa**. "João começou no Orion" não encerra o Atlas — pergunte se ele continua lá.
+- Pessoa só mencionada ("Pedi para o João…"): cadastro mínimo com o nome dito e
+  `note.extra.identity_status: "provisional"` — sem sobrenome, cargo ou time inventados. Mude para
+  `confirmed` (`memory.update_meta`, `meta.identity_status`) quando o usuário completar a identificação.
+- Colaboração ("Maria vai ajudar João na integração") não troca o responsável: relação `participates_in`
+  da pessoa para o assunto (com `note`), mantendo o `owned_by` atual.
 - Responsável: relação `owned_by` (do assunto para a pessoa/time). Troca de responsável: `remove_relations`
   do antigo + `relations` do novo, com `reason`.
 

@@ -194,6 +194,8 @@ class ArchitectureDecision(NoteBase):
 class PersonNote(NoteBase):
     type: Literal["person"] = "person"
     status: KnowledgeStatus = KnowledgeStatus.ACTIVE
+    # `provisional`: minimal record created from a mention (only the name the user said — CV-008).
+    identity_status: Literal["provisional", "confirmed"] | None = None
     role: str | None = None
     team_ids: list[EntityId] = Field(default_factory=list)
     responsibilities: list[str] = Field(default_factory=list)

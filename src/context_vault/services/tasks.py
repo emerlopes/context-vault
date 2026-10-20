@@ -2,7 +2,8 @@
 
 - Structured records in one shared file (never one file per task).
 - Equal open task (same title and assignee) → nothing new is created (`duplicate: true`).
-- Similar open task, or a completed task with the same title (new execution, CV-023) → confirmation.
+- Same title for another assignee (CV-074) or with disjoint `related_ids` (CV-075), similar open task,
+  or a completed task with the same title (new execution, CV-023) → confirmation.
 - Every change is kept in `history` (previous values); completion records `completed_at`.
 - No invented dates or assignees: empty stays empty.
 """
@@ -154,13 +155,21 @@ def prepare(vault: Vault, catalog: Catalog, tasks: list[Task], inp: TaskInput, n
     for task in tasks:
         same_person = _same_assignee(task, assignee_id, assignee_name)
         if task.status in OPEN_STATUSES:
-            if same_text(task.title, inp.title) and same_person:
+            same_title = same_text(task.title, inp.title)
+            # Same title in clearly different contexts (e.g. "Validar API" in Atlas and in Orion — CV-075).
+            other_context = bool(task.related_ids and inp.related_ids
+                                 and not set(task.related_ids) & set(inp.related_ids))
+            if same_title and same_person and not other_context:
                 out["existing"] = task
                 return out
             score = similarity(task.title, inp.title)
-            if (same_text(task.title, inp.title) or score >= SIMILARITY_THRESHOLD) and same_person is not False:
-                candidates.append({**_brief(task), "similarity": round(1.0 if same_text(task.title, inp.title)
-                                                                       else score, 2)})
+            if same_title and (same_person is False or other_context):
+                # Same action for someone else (CV-074) or in another context: never created silently.
+                candidates.append({**_brief(task), "similarity": 1.0, **({"different_assignee": True}
+                                   if same_person is False else {}), **({"different_context": True}
+                                   if other_context else {})})
+            elif (same_title or score >= SIMILARITY_THRESHOLD) and same_person is not False:
+                candidates.append({**_brief(task), "similarity": round(1.0 if same_title else score, 2)})
         elif task.status is TaskStatus.COMPLETED and same_text(task.title, inp.title) \
                 and task.id not in inp.related_ids:
             candidates.append({**_brief(task), "similarity": 1.0, "completed": True})

@@ -29,6 +29,8 @@ def resolve_ref(vault: Vault, ref: str, catalog: Catalog | None = None) -> tuple
     catalog = catalog or Catalog.load(vault)
     ref = ref.strip()
     normalized = ref.replace("\\", "/")
+    if "/" in normalized or normalized.endswith((".md", ".yaml")) or (len(ref) > 1 and ref[1] == ":"):
+        vault.path(normalized)  # traversal, absolute paths, .git and symlink escapes → PERMISSION_DENIED
     for entry in catalog.valid():
         if entry.path == normalized:
             return "note", entry.id  # type: ignore[return-value]

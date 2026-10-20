@@ -25,8 +25,9 @@ from ..ids import new_id
 from ..models.common import GapStatus, KnowledgeGap, Relation, RelationType, SourceType
 from ..models.notes import NOTE_CLASSES, NoteBase, NoteType
 from ..models.proposal import Certainty, ChangeMode, ConfidenceLevel, Proposal, ProposalOperation, SectionChange
+from ..paths import portability_problem
 from ..search.catalog import Catalog
-from ..storage.markdown import SectionEditor, normalize_title, provenance_comment, render_template
+from ..storage.markdown import SectionEditor, neutralize, normalize_title, provenance_comment, render_template
 from ..storage.yamlio import revision_of
 from . import knowledge, privacy
 from .contradictions import find_contradictions
@@ -193,7 +194,7 @@ def _apply_gaps(meta_dict: dict[str, Any], proposal: Proposal, now: Any) -> bool
 
 
 def _content_for(change: SectionChange, proposal: Proposal) -> str:
-    content = change.content.strip()
+    content = neutralize(change.content.strip(), escape_provenance=True)
     if proposal.source.type == SourceType.AGENT_INFERENCE:
         prefix = INFERENCE_PREFIX
     elif change.certainty is Certainty.HYPOTHESIS:
@@ -399,6 +400,9 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
         vault.path(new_path)
         if not new_path.endswith(".md"):
             raise ValidationError("O novo caminho deve terminar em .md")
+        problem = portability_problem(new_path)
+        if problem:
+            raise ValidationError(f"Caminho não portável: {problem}", details={"new_path": new_path})
         try:
             expected = expected_type_for(new_path)
         except ValueError:
@@ -802,6 +806,7 @@ def apply(vault: Vault, proposal: Proposal, *, lock_timeout: float | None = None
                 "related_paths": [c["path"] for c in result.related_changes] or None,
                 "contradictions": result.contradictions or None,
                 "structured": result.structured or None,
+                "sections": list(dict.fromkeys(c.section for c in proposal.all_changes())) or None,
             }.items() if v},
         )
         tx.record(event)

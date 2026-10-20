@@ -27,6 +27,7 @@ TRAILING_SECTIONS = ("historico", "historico de atualizacoes", "referencias")
 _HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 _FENCE = re.compile(r"^\s*(```|~~~)")
 _CV_COMMENT = re.compile(r"<!--\s*cv:.*?-->", re.DOTALL)
+_CV_OPEN = re.compile(r"<!--\s*cv:")
 _MD_MARKUP = re.compile(r"[*_`>#|\[\]()]")
 
 
@@ -50,6 +51,28 @@ def normalize_text(text: str) -> str:
 
 def strip_provenance(text: str) -> str:
     return _CV_COMMENT.sub("", text)
+
+
+def neutralize(text: str, *, escape_provenance: bool = False) -> str:
+    """Make free text safe to insert inside a section (content is data, never structure).
+
+    Heading lines outside code fences are escaped (``\\## X`` renders as text and does not open a
+    section), an unclosed fence is closed (it would hide every following heading) and, for text that
+    comes from outside the Core, forged provenance comments are made visible (``&lt;!-- cv:``)."""
+    lines = text.split("\n")
+    in_fence = False
+    for i, line in enumerate(lines):
+        if _FENCE.match(line):
+            in_fence = not in_fence
+            continue
+        if not in_fence and _HEADING.match(line):
+            lines[i] = "\\" + line
+    if in_fence:
+        lines.append("```")
+    out = "\n".join(lines)
+    if escape_provenance:
+        out = _CV_OPEN.sub("&lt;!-- cv:", out)
+    return out
 
 
 def provenance_comment(event_id: str, source: str, at: str, extra: dict[str, str] | None = None) -> str:
@@ -207,7 +230,7 @@ class SectionEditor:
         if mode == "merge" and self.contains(section, match or content, subsection):
             return SectionEdit(self.body, changed=False, duplicate=True)
         start, end = self.locate(section, subsection, create=True)  # type: ignore[misc]
-        block = content.strip("\n")
+        block = neutralize(content.strip("\n"))
         if provenance:
             block = f"{block}\n{provenance}"
         self._insert_block(start, end, block)
@@ -223,7 +246,7 @@ class SectionEditor:
         previous = "\n".join(self.lines[own_start:own_end]).strip("\n")
         if normalize_text(previous) == normalize_text(content):
             return SectionEdit(self.body, changed=False, duplicate=True, previous=previous)
-        new_block = content.strip("\n") + (f"\n{provenance}" if provenance else "")
+        new_block = neutralize(content.strip("\n")) + (f"\n{provenance}" if provenance else "")
         self.lines[own_start:own_end] = [""] + new_block.split("\n") + [""]
         if previous.strip():
             target = section if subsection is None else f"{section} › {subsection}"
@@ -237,6 +260,8 @@ class SectionEditor:
         return SectionEdit(self.body, changed=True, previous=previous)
 
     def _append_history(self, block: str) -> None:
+        first, _, rest = block.partition("\n")  # the first line is the Core's own "### ..." heading
+        block = first + ("\n" + neutralize(rest) if rest else "")
         history = None
         for head in headings(self.lines):
             if head.level == 2 and _is_history(head.title):

@@ -78,3 +78,14 @@ def test_parse_helpers():
 def test_unknown_expression():
     with pytest.raises(ValidationError):
         resolve("algum dia", NOW, TZ)
+
+
+@pytest.mark.parametrize("text", ["começo do mês que vem", "meados da próxima semana", "lá pela sexta"])
+def test_vague_expressions_are_ambiguous(text):  # CV-073
+    out = r(text)
+    assert out["ambiguous"] is True and "Expressão vaga" in out["notes"][0]
+
+
+@pytest.mark.parametrize("text", ["fim do mês", "sexta", "amanhã às 10h", "meio-dia"])
+def test_precise_expressions_are_not_vague(text):
+    assert "notes" not in r(text) or not any("vaga" in n for n in r(text)["notes"])

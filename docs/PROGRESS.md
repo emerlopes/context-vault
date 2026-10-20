@@ -168,14 +168,34 @@ uv run context-vault --help  # CLI
 > - `test_documented_commands_exist` falha se a skill citar comando/opção que não existe: mantenha a skill
 >   sincronizada ao mudar a CLI.
 
-## Etapa 7 — Testes de cenário e robustez ⬜
+## Etapa 7 — Testes de cenário e robustez ✅
 
-- [ ] Cenários A–G da especificação (end-to-end via CLI)
-- [ ] Catálogo de testes (grupos A–M, regras R01–R12) — nível Core automatizado; nível agente documentado no modelo §18
-- [ ] Testes de segurança (prompt injection tratado como dado, symlinks, schema inválido)
-- [ ] Multiagente: mesmo repositório, operações concorrentes
-- [ ] Portabilidade (caminhos Windows, fins de linha)
-- [ ] Relatório de execução dos testes
+- [x] Cenários A–G da especificação end-to-end via CLI (`tests/scenarios/test_spec_flows.py`)
+- [x] Catálogo (grupos A–M, regras R01–R12) no nível Core: os 84 cenários têm teste; o nível agente está
+      documentado no modelo §18 (`tests/scenarios/agent_level.yaml`) com status BLOQUEADO (sem agente executável)
+- [x] Segurança: conteúdo de nota não vira estrutura nem proveniência (`neutralize`, CV-062), caminhos externos e
+      symlinks recusados com `PERMISSION_DENIED` (também em `read`), schemas inválidos, falha de E/S com envelope
+      JSON e `saved: false` (CV-063), índice apontando para arquivo apagado detalhado (CV-064)
+- [x] Multiagente: processos separados no mesmo repositório (`--repo`, `CONTEXT_VAULT_REPO`, config do usuário),
+      14 operações concorrentes sem perda nem duplicação, mesmo `request_id` em dois agentes, skill para todos os agentes
+- [x] Portabilidade: CRLF e BOM em arquivos editados à mão, `.gitattributes` com LF, caminhos `\`, nomes reservados
+      do Windows, `NON_PORTABLE_PATH`/`CASE_COLLISION` no `validate`, fuso explícito
+- [x] Relatório: `uv run pytest --cv-report docs/RELATORIO_TESTES.md` ([RELATORIO_TESTES.md](RELATORIO_TESTES.md))
+- [x] Correções no Core encontradas pelos cenários: `context --since` / `journal list --period` (CV-036), histórico
+      com estado anterior no `context` (CV-007), mesma tarefa para outra pessoa/contexto (CV-074/CV-075), datas vagas
+      (CV-073), `identity_status` provisório (CV-008) — decisões D40–D48 (340 testes; 1 ignorado no macOS: colisão de maiúsculas exige sistema de arquivos sensível a caixa)
+
+> **Ponto de partida (handoff da Etapa 7):**
+> - Testes de cenário em `tests/scenarios/` (helpers em `_helpers.py`); cada teste cita no código os IDs
+>   que cobre — o plugin `tests/cv_report.py` usa isso para montar o relatório. Ao criar testes novos para um
+>   cenário do catálogo, cite o `CV-0xx` na linha do `def` ou no corpo.
+> - **Nível agente ainda não executado:** `claude -p` sem OAuth válido; Codex, Gemini CLI e Devin não instalados.
+>   Para rodar: catálogo §20 com cada agente, registrar no modelo §18 e atualizar `agent_level.yaml` (status/motivo).
+> - A Etapa 8 deve documentar: `context --since`, `journal list --period`, `identity_status`, códigos novos do
+>   `validate` (`INDEX_MISSING_FILE`, `NON_PORTABLE_PATH`, `CASE_COLLISION`), `details.saved` nos erros e
+>   `CONTEXT_VAULT_DEBUG`. Limitações reais: um responsável por tarefa; equivalência semântica é decisão do agente;
+>   detecção de contradição/sensibilidade é léxica.
+> - A suíte completa leva ~1min40s (setup dos testes de recuperação + processos reais nos testes multiagente).
 
 ## Etapa 8 — Documentação e entrega ⬜
 
@@ -199,3 +219,4 @@ uv run context-vault --help  # CLI
 | 2026-10-20 | 4 | Operacional: datas relativas (`dates resolve`), agenda com conflitos/reagendamento/cancelamento, pendências com duplicatas/histórico/filtros, reuniões (criação, reunião ativa, anotações com pendências, correções rastreáveis, resumo), exclusão limpando referências, aviso de projeto encerrado. 213 testes. |
 | 2026-10-20 | 5 | Relacionamentos: validação de relações tipadas, `remove_relations`, grafo bidirecional (`related`), síntese por assunto (`context`), `meetings brief` e `daily brief` com registrado x sugestões. 229 testes. |
 | 2026-10-20 | 6 | Skill: `SKILL.md` + 6 referências, `AGENTS.md`/`GEMINI.md`, plugin Claude Code, extensão Gemini, `install-skill` para Claude Code/Codex/Gemini/Devin (pasta compartilhada `.agents/skills`), status/desinstalação seguras, pacote zip com instaladores, skill no wheel, `python -m context_vault`. 270 testes. |
+| 2026-10-20 | 7 | Cenários: fluxos A–G, 84 cenários do catálogo no nível Core, segurança (injeção em notas, caminhos, symlinks, falha de E/S), multiagente com processos concorrentes, portabilidade (CRLF/BOM, nomes Windows), relatório `--cv-report`. Correções: `context --since`, `journal --period`, histórico detalhado, duplicatas por responsável/contexto, datas vagas, pessoa provisória, índice detalhado, envelope JSON em erros de E/S. 340 testes. |

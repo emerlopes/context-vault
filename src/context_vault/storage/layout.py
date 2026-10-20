@@ -47,6 +47,12 @@ GITIGNORE = """\
 .DS_Store
 """
 
+# LF in every checkout (Windows included): revisions are sha256 of the bytes, so the same note must
+# have the same bytes on every machine/agent that shares the repository.
+GITATTRIBUTES = """\
+* text=auto eol=lf
+"""
+
 README = """\
 # Memória ContextVault
 
@@ -139,6 +145,7 @@ def initialize_layout(repo: Path) -> InitResult:
             keep.touch()
 
     _write_if_missing(repo, ".gitignore", GITIGNORE, result)
+    _write_if_missing(repo, ".gitattributes", GITATTRIBUTES, result)
     _write_if_missing(repo, "README.md", README, result)
     _write_if_missing(repo, "AGENTS.md", AGENTS, result)
     _write_if_missing(repo, CONFIG_FILENAME, default_config_yaml(str(repo)), result)

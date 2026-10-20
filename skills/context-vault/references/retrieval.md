@@ -9,10 +9,10 @@ Responder perguntas **apenas** com o que está registrado, citando as fontes.
 | `search "<texto>" [--type T] [--kind note\|task\|appointment\|inbox\|journal] [-n N]` | Busca híbrida (título, alias, entidade, conteúdo, relações, agenda, pendências, diário) com `score`, `reasons` e trechos |
 | `resolve "<nome>" [--type person]` | Identifica exatamente um registro; homônimos/siglas ambíguas → `AMBIGUOUS_MATCH` com `candidates` |
 | `read <id\|prefixo\|caminho> [--history]` | Nota completa, relações, backlinks, pendências, compromissos, `unconfirmed`; `--history` traz commits e eventos |
-| `context "<assunto>" [--depth N]` | "Tudo que sabemos sobre X": síntese por categoria com `sources` e `empty_categories` |
+| `context "<assunto>" [--depth N] [--since P]` | "Tudo que sabemos sobre X": síntese por categoria com `sources` e `empty_categories`; `--since "esta semana"` acrescenta `changes` (o que mudou no período) |
 | `related <id> [--depth 1-5] [--type T] [--kind K] [--direction in\|out\|both] [--current]` | Navegação no grafo nos dois sentidos |
 | `gaps list [<ref>]` | O que ainda falta esclarecer |
-| `journal list [--date D]` | Eventos registrados (o que mudou) |
+| `journal list [--date D \| --period P \| --all] [--target ID]` | Eventos registrados (o que mudou) |
 | `projects list\|milestones\|blockers` | Status, marcos/entregas e bloqueios |
 
 ## Procedimento
@@ -49,6 +49,15 @@ Responder perguntas **apenas** com o que está registrado, citando as fontes.
 (vigentes x anteriores x de reuniões), pessoas e times (atuais x anteriores), reuniões, agenda futura,
 pendências abertas, bloqueios, marcos, lacunas e histórico. Monte a síntese **só com as categorias que
 têm conteúdo**; se for útil, diga quais não têm registro (`empty_categories`). Termine com as fontes.
+
+## "O que mudou em X nesta semana?"
+
+`context X --since "esta semana"` (ou `hoje`, `ontem`, `AAAA-MM-DD` = daquele dia até hoje) devolve
+`changes.events` — eventos do diário sobre X e seus vizinhos no período, em ordem, cada um com
+`categories` (`decisions`, `risks`, `tasks`, `blockers`, `milestones`, `meetings`, `agenda`, `people`,
+`status`, `updates`…), `summary`, `sections`, `source` e `path` — e `changes.by_category`. Resuma
+separando decisões, riscos e pendências e cite as fontes. Sem eventos: `changes.notice` — diga que nada
+foi registrado no período (não invente mudanças).
 
 ## Briefings
 

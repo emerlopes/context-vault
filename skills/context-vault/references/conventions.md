@@ -36,6 +36,11 @@
 | 11 | `CONFIRMATION_REQUIRED` |
 | 12 | `LOCK_TIMEOUT` |
 
+Erros de sistema de arquivos (repositório somente leitura, sem permissão, disco cheio) chegam como
+`REPOSITORY_UNAVAILABLE` com `details.saved: false`; falhas inesperadas como `INTERNAL_ERROR` com
+`details.saved: false`. Em ambos nada foi gravado: diga isso ao usuário. Caminho fora do repositório
+(`../`, absoluto, `.git`, link simbólico para fora) → `PERMISSION_DENIED`.
+
 ## `request_id`
 
 Único por intenção do usuário, estável entre tentativas da **mesma** operação (ex.:

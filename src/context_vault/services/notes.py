@@ -11,6 +11,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from ..errors import NotFoundError, ValidationError
 from ..models.notes import NOTE_DIRECTORIES, NoteBase, NoteType, parse_note_meta
+from ..paths import WINDOWS_RESERVED
 from ..storage.frontmatter import parse_document, render_document
 from ..storage.markdown import strip_accents
 from ..storage.yamlio import revision_of_bytes
@@ -86,7 +87,8 @@ def load_note_file(vault: Vault, rel: str) -> Note:
 def slugify(text: str, max_length: int = 80) -> str:
     slug = strip_accents(text).lower()
     slug = re.sub(r"[^a-z0-9]+", "-", slug).strip("-")
-    return (slug[:max_length].rstrip("-")) or "nota"
+    slug = (slug[:max_length].rstrip("-")) or "nota"
+    return f"{slug}-nota" if slug in WINDOWS_RESERVED else slug  # "CON" → con-nota.md (portable)
 
 
 def note_directory(note_type: NoteType, meta: NoteBase | None = None) -> str:

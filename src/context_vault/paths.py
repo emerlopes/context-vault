@@ -3,9 +3,28 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path, PurePosixPath
 
 from .errors import PermissionDeniedError
+
+
+# Names that cannot exist on Windows (even with an extension) and characters it refuses: a memory
+# repository must open on every OS that shares it (spec §24.3, §30 portability).
+WINDOWS_RESERVED = {"con", "prn", "aux", "nul", *(f"com{i}" for i in range(1, 10)), *(f"lpt{i}" for i in range(1, 10))}
+_NON_PORTABLE_CHARS = re.compile(r'[<>:"|?*\x00-\x1f]')
+
+
+def portability_problem(rel: str) -> str | None:
+    """Why `rel` would not work on Windows/macOS/Linux alike, or None."""
+    for part in PurePosixPath(rel.replace("\\", "/")).parts:
+        if _NON_PORTABLE_CHARS.search(part):
+            return f"caractere não portável em \"{part}\" (proibido no Windows)"
+        if part.split(".")[0].lower() in WINDOWS_RESERVED:
+            return f"\"{part}\" é um nome reservado no Windows"
+        if part.endswith((" ", ".")) and part not in (".", ".."):
+            return f"\"{part}\" termina com espaço ou ponto (inválido no Windows)"
+    return None
 
 
 def to_posix(rel: Path | str) -> str:

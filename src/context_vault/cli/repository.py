@@ -10,7 +10,7 @@ import typer
 from ..config import resolve_repository
 from ..errors import ValidationError
 from ..search.catalog import Catalog
-from ..services.indexer import generate
+from ..services.indexer import generate, index_drift
 from ..services.journal import iter_journal_files, journal_path, parse_journal
 from ..services.transaction import Transaction, pending_transactions, recover
 from ..services.validation import validate_repository
@@ -82,6 +82,11 @@ def register(app: typer.Typer) -> None:
             if stale:
                 report.warning("INDEX_STALE", None, "Índice desatualizado; rode `context-vault index rebuild`",
                                files=stale)
+                for item in index_drift(vault.repo, Catalog.load(vault))["missing_files"]:
+                    report.warning("INDEX_MISSING_FILE", item["path"],
+                                   f"O índice aponta para \"{item['title']}\", mas o arquivo não existe. O conteúdo "
+                                   f"pode estar no histórico Git (git log -- {item['path']}); `index rebuild` "
+                                   "remove a entrada.", id=item["id"])
             data = report.to_dict()
             if not report.ok:
                 data["_exit_code"] = 5
@@ -95,6 +100,7 @@ def register(app: typer.Typer) -> None:
 
         def _do() -> dict[str, Any]:
             vault = open_vault()
+            drift = index_drift(vault.repo, Catalog.load(vault, use_cache=False))
             with Transaction(vault, "context-vault: index rebuild") as tx:
                 catalog = Catalog.load(vault, use_cache=False)
                 tx.reindex = False
@@ -104,6 +110,7 @@ def register(app: typer.Typer) -> None:
                 result = tx.commit()
             report = validate_repository(vault)
             data = {"entries": len(catalog.valid()), "changed": result.paths, "commit": result.commit,
+                    "removed_entries": drift["missing_files"], "added_entries": drift["unindexed"],
                     "consistent": report.ok, **{k: v for k, v in report.to_dict().items() if k in ("errors", "warnings", "issues")}}
             if not report.ok:
                 data["_exit_code"] = 9
@@ -118,7 +125,9 @@ def register(app: typer.Typer) -> None:
         def _do() -> dict[str, Any]:
             vault = open_vault()
             stale = _stale_index(vault)
-            return {"consistent": not stale, "stale": stale, **({"_exit_code": 9} if stale else {})}
+            drift = index_drift(vault.repo, Catalog.load(vault)) if stale else {}
+            return {"consistent": not stale, "stale": stale, **{k: v for k, v in drift.items() if v},
+                    **({"_exit_code": 9} if stale else {})}
 
         run("index.check", _do)
 
@@ -132,12 +141,21 @@ def register(app: typer.Typer) -> None:
         on: Optional[str] = typer.Option(None, "--date", help="Data AAAA-MM-DD (padrão: hoje)."),
         target: Optional[str] = typer.Option(None, "--target", help="Filtra por ID do registro."),
         all_days: bool = typer.Option(False, "--all", help="Todos os dias."),
+        period: Optional[str] = typer.Option(None, "--period", "-p",
+                                             help="Período: 'esta semana', 'ontem', AAAA-MM-DD (até hoje)…"),
     ) -> None:
         """Lista eventos do diário."""
 
         def _do() -> dict[str, Any]:
             vault = open_vault()
-            if all_days:
+            if period:
+                from ..services.dates import parse_range
+
+                start, end = parse_range(period, vault.now(), vault.timezone)
+                if start == end and start <= vault.now().date():
+                    end = vault.now().date()
+                files = [f for f in iter_journal_files(vault.repo) if start.isoformat() <= f.stem <= end.isoformat()]
+            elif all_days:
                 files = iter_journal_files(vault.repo)
             else:
                 try:

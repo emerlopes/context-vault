@@ -35,9 +35,13 @@ def register(app: typer.Typer) -> None:
         term: str = typer.Argument(..., help="Assunto: nome, sigla, alias, ID ou caminho."),
         depth: int = typer.Option(1, "--depth", "-d", help="Profundidade das relações (1–3)."),
         no_mentions: bool = typer.Option(False, "--no-mentions", help="Não incluir menções sem relação registrada."),
+        since: Optional[str] = typer.Option(None, "--since", "-s",
+                                            help="Período das alterações (diário): 'esta semana', 'hoje', AAAA-MM-DD "
+                                                 "(até hoje)…"),
     ) -> None:
         """Tudo que está registrado sobre um assunto, agrupado por categoria, com fontes."""
-        run("memory.context", lambda: run_context(open_vault(), term, depth=depth, include_mentions=not no_mentions))
+        run("memory.context", lambda: run_context(open_vault(), term, depth=depth, include_mentions=not no_mentions,
+                                                  since=since))
 
     @daily_app.command("brief")
     def daily_brief_cmd(

@@ -369,3 +369,73 @@ está no PATH; sem ela, copiam a pasta (recusam sobrescrever sem `--force`, exit
 necessária. `--skill-only` gera um zip só com `context-vault/` (upload de skill no app do Claude).
 `install-skill --source <zip>` rejeita caminhos absolutos, `..` e links simbólicos no zip.
 
+
+## D40 — Conteúdo é dado, nunca estrutura
+
+Todo texto livre inserido numa seção passa por `neutralize()` (`storage/markdown.py`): linhas de título fora de
+blocos de código viram texto (`\## Decisões`), um bloco de código não fechado é fechado (esconderia os títulos
+seguintes) e, no conteúdo vindo de propostas, comentários de origem forjados (`<!-- cv:…`) ficam visíveis
+(`&lt;!-- cv:`). O mesmo vale para o texto do usuário dentro de entradas do `## Histórico` (motivos, descrições).
+Assim uma nota não consegue criar uma seção `Decisões` falsa, esconder seções nem falsificar proveniência (CV-062).
+
+## D41 — Falhas de E/S e erros inesperados mantêm o envelope JSON
+
+`OSError` (repositório somente leitura, sem permissão, disco cheio) → `REPOSITORY_UNAVAILABLE` (exit 8) com
+`details.saved: false`; qualquer outra exceção → `INTERNAL_ERROR` (exit 1) com `details.saved: false`. A transação
+já desfez o que tinha começado, então nada fica pela metade e o agente nunca recebe um traceback no lugar de JSON
+(CV-063). `CONTEXT_VAULT_DEBUG=1` relança a exceção para depuração. `read` com algo que parece caminho (`/`, `\`,
+`.md`, `C:`) passa pela checagem de caminho: fora do repositório → `PERMISSION_DENIED` em vez de `NOT_FOUND`.
+
+## D42 — Portabilidade dos arquivos
+
+- `init` cria `.gitattributes` com `* text=auto eol=lf`: a revisão é o sha256 dos bytes, então a mesma nota precisa
+  ter os mesmos bytes em todas as máquinas e agentes. Leitura aceita CRLF e BOM UTF-8; escrita sempre em LF sem BOM.
+- Nomes gerados são ASCII; títulos que virariam nomes reservados do Windows (`CON`, `NUL`, `COM1`…) ganham
+  `-nota` (`con-nota.md`). `memory.move` recusa caminhos não portáveis (`<>:"|?*`, nomes reservados, final com
+  ponto/espaço). `validate` avisa `NON_PORTABLE_PATH` e `CASE_COLLISION` (nomes que só diferem por maiúsculas,
+  que colidem no macOS e no Windows) em arquivos criados à mão.
+- Caminhos relativos no estilo Windows (`dominios\nota.md`) são aceitos em `read` e `memory.move`.
+
+## D43 — "O que mudou no período" vem do diário
+
+`context <termo> --since <período>` acrescenta `changes`: eventos do diário no período cujo alvo é o assunto ou um
+vizinho do grafo (ou que alteraram a nota do assunto como arquivo secundário), em ordem, com `categories`
+derivadas da operação, do tipo do alvo, das seções alteradas (`details.sections`, gravado no evento desde a
+Etapa 7) e das mudanças estruturadas (bloqueios, marcos, participações). Um único dia significa "daquele dia até
+hoje". `journal list --period` filtra o diário do mesmo jeito. Só eventos registrados são devolvidos (CV-036).
+O `history` do `context` passou a trazer, além do rótulo, o estado anterior e o motivo de cada entrada.
+
+## D44 — Mesma ação para outra pessoa ou em outro contexto
+
+Uma tarefa aberta com o mesmo título só é "a mesma" (reconhecida, nada criado) quando o responsável também é o
+mesmo **e** os `related_ids` não são disjuntos. Mesmo título para outro responsável (`different_assignee`,
+CV-074) ou em contextos disjuntos (`different_context`, CV-075 — "Validar API" no Atlas e no Orion) → confirmação
+`possible_duplicate`, nunca criação silenciosa nem fusão. O modelo continua com um responsável por tarefa;
+co-responsáveis vão em `note` após o agente perguntar o responsável principal.
+
+## D45 — Datas vagas não viram dia
+
+Qualificadores como `começo`, `início`, `meados`, `meio`, `final`, `lá pelo`, `talvez` que sobram depois da
+interpretação marcam a resolução como `ambiguous: true` com nota "Expressão vaga…". `due_date` já recusava
+períodos ("mês que vem"); com isso "começo do mês que vem" nunca é convertido em 01/11 por conta própria (CV-073).
+
+## D46 — Pessoa provisória
+
+`PersonNote.identity_status` (`provisional` | `confirmed`, opcional): cadastro mínimo criado a partir de uma menção
+("Pedi para o João…"), só com o nome dito (CV-008). Não afeta `resolve`: a pessoa provisória é reutilizada nas
+menções seguintes.
+
+## D47 — Índice inconsistente é detalhado, não descartado
+
+`index check`/`validate` comparam o `index.json` versionado com as notas: `missing_files` (entrada cujo arquivo foi
+apagado fora do Core — aviso `INDEX_MISSING_FILE` lembrando que o conteúdo pode estar no histórico Git),
+`moved` e `unindexed`. `index rebuild` corrige e devolve `removed_entries`/`added_entries`, para o agente contar ao
+usuário o que saiu do índice (CV-064).
+
+## D48 — Testes de cenário e relatório
+
+`tests/scenarios/` reproduz os fluxos A–G da spec e os cenários do catálogo pela CLI, verificando só o estado
+persistido. Cada teste cita no próprio código os IDs que cobre (`CV-0xx`, intervalos, `R01`–`R12`, `Cenário X`);
+`pytest --cv-report docs/RELATORIO_TESTES.md` (plugin `tests/cv_report.py`) gera o relatório no modelo do catálogo
+§18. O nível agente (perguntas e respostas da conversa) fica em `tests/scenarios/agent_level.yaml` com status
+próprio — `BLOQUEADO` enquanto não houver agente executável para rodar o catálogo §20.

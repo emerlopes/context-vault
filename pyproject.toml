@@ -29,4 +29,5 @@ packages = ["src/context_vault"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+pythonpath = ["tests"]
+addopts = "-q -p cv_report"
