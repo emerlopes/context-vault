@@ -102,6 +102,7 @@ uv run context-vault --help  # CLI
 - [ ] Adaptador Gemini CLI (GEMINI.md / extensão)
 - [ ] Comando `context-vault install-skill --agent <nome>`
 - [ ] Testes de instalação/descoberta dos adaptadores
+- [ ] Permitir instalação local, para que seja possivel compartilhar via zip a skill para as pessoas elas fazerem a instalção local das skill sem passar por marketplace
 
 ## Etapa 7 — Testes de cenário e robustez ⬜
 
