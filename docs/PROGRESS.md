@@ -1,6 +1,8 @@
 # ContextVault — Plano de implementação e progresso
 
-Especificação: [main.md](main.md). Decisões técnicas: [DECISIONS.md](DECISIONS.md).
+Especificação: [main.md](main.md). Complementos: [assistência_inteligente_anotacoes.md](assistência_inteligente_anotacoes.md)
+(captura assistida — impacta Etapas 2, 3 e 6) e [catalogo_de_testes.md](catalogo_de_testes.md) (ainda vazio — usar na Etapa 7).
+Decisões técnicas: [DECISIONS.md](DECISIONS.md).
 
 Cada etapa foi dimensionada para caber em uma sessão de trabalho. Ao final de cada sessão,
 atualize os checkboxes e o **Registro de sessões** no fim deste arquivo.
