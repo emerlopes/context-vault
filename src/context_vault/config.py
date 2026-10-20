@@ -71,6 +71,7 @@ class SearchConfig(_Strict):
 class AgendaConfig(_Strict):
     default_timezone: str = "America/Sao_Paulo"
     detect_conflicts: bool = True
+    confirm_conflicts: bool = False  # true: overlapping appointments need confirmation (not just a warning)
 
     @field_validator("default_timezone")
     @classmethod

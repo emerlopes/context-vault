@@ -70,6 +70,7 @@ class Plan:
     sensitive: list[dict[str, Any]] = field(default_factory=list)
     suggested_gaps: list[dict[str, Any]] = field(default_factory=list)
     structured: list[str] = field(default_factory=list)
+    extra_output: dict[str, Any] = field(default_factory=dict)  # set by apply hooks (e.g. tasks of a meeting)
 
     @property
     def requires_confirmation(self) -> bool:
@@ -224,12 +225,16 @@ def _provenance(plan: Plan, proposal: Proposal, at: str) -> str:
     })
 
 
-def _possible_duplicates(catalog: Catalog, note_type: str, title: str, aliases: list[str]) -> list[dict[str, Any]]:
+def _possible_duplicates(catalog: Catalog, note_type: str, title: str, aliases: list[str],
+                         day: Any = None) -> list[dict[str, Any]]:
+    """Same type and title/alias. Meetings are events: only the same title on the same date counts."""
     names = {normalize_title(title), *(normalize_title(a) for a in aliases)}
     out = []
     for entry in catalog.valid():
         meta = entry.meta or {}
-        if meta.get("type") != note_type or note_type == "meeting":
+        if meta.get("type") != note_type:
+            continue
+        if note_type == "meeting" and str(meta.get("date")) != str(day):
             continue
         theirs = {normalize_title(meta.get("title", "")), *(normalize_title(a) for a in meta.get("aliases", []))}
         if names & theirs:
@@ -242,8 +247,9 @@ def _confirmation(vault: Vault, proposal: Proposal, plan: Plan, *, is_create: bo
     reasons = plan.confirmation_reasons
     if behavior.autonomy == "conservative" and plan.changed:
         reasons.append("conservative_mode")
-    if is_create and behavior.confirm_new_topics and behavior.autonomy != "autonomous":
-        reasons.append("new_topic")
+    is_meeting = proposal.note is not None and proposal.note.type is NoteType.MEETING
+    if is_create and behavior.confirm_new_topics and behavior.autonomy != "autonomous" and not is_meeting:
+        reasons.append("new_topic")  # meetings are events, not new topics (spec §11.1)
     if plan.candidates:
         reasons.append("possible_duplicate")
     if has_replace and behavior.confirm_conflicting_updates:
@@ -303,6 +309,11 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
             details={"path": note.path, "expected_revision": proposal.expected_revision, "current_revision": note.revision},
         )
 
+    if note.meta.type == NoteType.MEETING.value and not proposal.reason and (
+            op is ProposalOperation.MEMORY_CORRECT
+            or any(c.replaces or c.mode is ChangeMode.REPLACE for c in proposal.all_changes())):
+        raise ValidationError("Correções na ata de uma reunião exigem 'reason' (o registro original é preservado "
+                              "no histórico e a correção precisa ser rastreável — spec §11.7)")
     ws = Workspace(vault, catalog, note.meta.id)
     label = now.date().isoformat()
     prov = _provenance(result, proposal, at)
@@ -320,7 +331,7 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
         result.files[note.path] = None
         result.changed = True
         result.warnings.append(DELETE_WARNING)
-        result.warnings += _records_referencing(vault, note.meta.id)
+        result.warnings += _unlink_records(vault, result, note.meta.id, now)
         result.summary = f"Excluir {meta['type']} {note.meta.id} ({note.path})"
         _confirmation(vault, proposal, result, is_create=False, has_replace=False)
         return result
@@ -434,6 +445,21 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
     if meta["type"] == NoteType.ARCHITECTURE_DECISION.value:
         meta_changed |= _plan_supersede(ws, catalog, meta, old_supersedes, label, prov)
 
+    if meta["type"] == NoteType.MEETING.value and str(meta.get("date")) != str(getattr(note.meta, "date")) \
+            and op is not ProposalOperation.MEMORY_MOVE:
+        tmp_meta = _validate_meta(NOTE_CLASSES[NoteType.MEETING], meta)
+        filename = note.path.rsplit("/", 1)[1]
+        old_prefix = f"{getattr(note.meta, 'date').isoformat()}-"
+        filename = (f"{getattr(tmp_meta, 'date').isoformat()}-{filename[len(old_prefix):]}"
+                    if filename.startswith(old_prefix) else filename)
+        new_path = unique_path(vault, note_directory(NoteType.MEETING, tmp_meta), filename, reserved)
+        result.path = new_path
+        editor.append_history(f"### {label} — Data alterada de {getattr(note.meta, 'date').isoformat()} para "
+                              f"{getattr(tmp_meta, 'date').isoformat()}" + (f"\n\nMotivo: {proposal.reason}"
+                                                                            if proposal.reason else "") + f"\n{prov}")
+        body_changed = True
+        update_references(ws, catalog, note.meta.id, old_title=note.meta.title, new_title=note.meta.title,
+                          old_path=note.path, new_path=new_path)
     if body_changed or meta_changed:
         meta["updated_at"] = now
         new_meta = _validate_meta(NOTE_CLASSES[NoteType(meta["type"])], meta)
@@ -450,6 +476,9 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
     if op not in (ProposalOperation.MEMORY_ARCHIVE, ProposalOperation.MEMORY_MOVE):
         result.warnings += knowledge.blocker_warnings(meta)
         result.suggested_gaps = knowledge.suggest_gaps(meta, editor.body)
+    if meta["type"] == NoteType.PROJECT.value and _v(new_status) != _v(old_status) \
+            and _v(new_status) in ("completed", "cancelled", "archived"):
+        result.warnings += _open_tasks_warning(vault, note.meta.id, _v(new_status))
     result.summary = _summary(op, note.meta.title, result)
     _confirmation(vault, proposal, result, is_create=False, has_replace=has_replace)
     return result
@@ -524,18 +553,74 @@ def _plan_supersede(ws: Workspace, catalog: Catalog, meta: dict[str, Any], old: 
     return True
 
 
-def _records_referencing(vault: Vault, note_id: str) -> list[str]:
-    from .records import load_appointments, load_tasks
+def _unlink_records(vault: Vault, result: Plan, note_id: str, now: Any) -> list[str]:
+    """Remove references to a deleted note from tasks and appointments (same transaction).
 
-    tasks = [t.id for t in load_tasks(vault) if note_id in (*t.related_ids, *t.blocked_by, t.assignee_id,
-                                                              t.source_meeting_id)]
-    appts = [a.id for _, a in load_appointments(vault) if note_id in (*a.related_ids, a.meeting_id)]
+    Names are kept (`assignee_name`, `participants`) so the record stays readable; each change is
+    preserved in the record history."""
+    from ..models.agenda import AppointmentHistoryEntry
+    from ..models.tasks import TaskHistoryEntry
+    from ..storage.layout import TASKS_YAML
+    from .records import load_agenda_file, load_tasks_file, render_agenda, render_tasks
+
+    change = f"referência removida: nota {note_id} excluída"
     out = []
-    if tasks:
-        out.append(f"Pendências ainda referenciam a nota excluída: {', '.join(tasks)}")
-    if appts:
-        out.append(f"Compromissos ainda referenciam a nota excluída: {', '.join(appts)}")
+    tf = load_tasks_file(vault)
+    touched = []
+    for task in tf.tasks:
+        refs = (*task.related_ids, *task.blocked_by, task.assignee_id, task.source_meeting_id)
+        if note_id not in refs:
+            continue
+        task.related_ids = [i for i in task.related_ids if i != note_id]
+        task.blocked_by = [i for i in task.blocked_by if i != note_id]
+        if task.assignee_id == note_id:
+            task.assignee_id = None
+        if task.source_meeting_id == note_id:
+            task.source_meeting_id = None
+        task.history = [*task.history, TaskHistoryEntry(at=now, change=change)]
+        task.updated_at = now
+        touched.append(task.id)
+    if touched:
+        rel = TASKS_YAML
+        result.originals[rel] = vault.path(rel).read_text(encoding="utf-8")
+        result.revisions[rel] = revision_of(vault.path(rel))  # type: ignore[assignment]
+        result.files[rel] = render_tasks(tf.tasks)
+        result.related_changes.append({"id": None, "title": "Pendências", "path": rel,
+                                       "changes": [f"{change} ({', '.join(touched)})"]})
+        out.append(f"Referências removidas de {len(touched)} pendência(s): {', '.join(touched)}")
+    for rel in vault.iter_agenda_files():
+        agenda = load_agenda_file(vault, rel)
+        ids = []
+        for appt in agenda.appointments:
+            if note_id not in (*appt.related_ids, *appt.participant_ids, appt.meeting_id):
+                continue
+            appt.related_ids = [i for i in appt.related_ids if i != note_id]
+            appt.participant_ids = [i for i in appt.participant_ids if i != note_id]
+            if appt.meeting_id == note_id:
+                appt.meeting_id = None
+            appt.history = [*appt.history, AppointmentHistoryEntry(at=now, change=change)]
+            appt.updated_at = now
+            ids.append(appt.id)
+        if ids:
+            result.originals[rel] = vault.path(rel).read_text(encoding="utf-8")
+            result.revisions[rel] = revision_of(vault.path(rel))  # type: ignore[assignment]
+            result.files[rel] = render_agenda(agenda.appointments)
+            result.related_changes.append({"id": None, "title": "Agenda", "path": rel,
+                                           "changes": [f"{change} ({', '.join(ids)})"]})
+            out.append(f"Referências removidas de {len(ids)} compromisso(s): {', '.join(ids)}")
     return out
+
+
+def _open_tasks_warning(vault: Vault, project_id: str, status: str) -> list[str]:
+    """Closing a project never closes its tasks (CV-027): the agent must tell the user."""
+    from .tasks import open_tasks_for
+
+    tasks = open_tasks_for(vault, project_id)
+    if not tasks:
+        return []
+    titles = "; ".join(f"\"{t.title}\"" + (f" ({t.assignee_name})" if t.assignee_name else "") for t in tasks)
+    return [f"Projeto marcado como `{status}` com {len(tasks)} pendência(s) em aberto, que não foram concluídas "
+            f"automaticamente: {titles}"]
 
 
 def _v(value: Any) -> str:
@@ -587,7 +672,8 @@ def _plan_create(vault: Vault, proposal: Proposal, catalog: Catalog, result: Pla
                  and (e.meta or {}).get("adr_number") == getattr(meta, "adr_number")]
         if taken:
             raise ValidationError(f"ADR-{getattr(meta, 'adr_number'):04d} já existe", details={"path": taken[0].path})
-    result.candidates = _possible_duplicates(catalog, note_type.value, meta.title, meta.aliases)
+    result.candidates = _possible_duplicates(catalog, note_type.value, meta.title, meta.aliases,
+                                             getattr(meta, "date", None))
 
     title = meta.title if note_type is not NoteType.ARCHITECTURE_DECISION else f"ADR-{getattr(meta, 'adr_number'):04d} — {meta.title}"
     editor = SectionEditor(render_template(title, TEMPLATES[note_type]))
@@ -719,6 +805,7 @@ def apply(vault: Vault, proposal: Proposal, *, lock_timeout: float | None = None
         for key in ("related_changes", "structured", "suggested_gaps"):
             if getattr(result, key):
                 output[key] = getattr(result, key)
+        output.update(result.extra_output)
         tx.record_request({"request_id": proposal.request_id, "payload_hash": req_hash, "event_id": result.event_id,
                            "operation": proposal.operation.value, "at": vault.now().isoformat(),
                            "result": {**output, "commit": None}})

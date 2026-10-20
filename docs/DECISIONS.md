@@ -216,9 +216,8 @@ Texto livre e histórico não são reescritos; o título antigo vira alias.
 ## D26 — Exclusão
 
 `memory.delete` exige `security.allow_destructive_operations: true` (senão `PERMISSION_DENIED`) e sempre
-confirmação `destructive`. Remove o arquivo e as referências por ID nas outras notas. Pendências e
-compromissos que ainda apontem para a nota são listados em `warnings` (tratamento automático fica para a
-Etapa 4). O resultado avisa que o histórico Git mantém versões anteriores (spec §23.4).
+confirmação `destructive`. Remove o arquivo e as referências por ID nas outras notas, pendências e
+compromissos (desde a Etapa 4 — ver D32). O resultado avisa que o histórico Git mantém versões anteriores (spec §23.4).
 
 ## D27 — Lacunas sugeridas
 
@@ -227,3 +226,64 @@ justificativa/contexto, projeto sem objetivo/responsável ou bloqueado sem bloqu
 função, domínio/arquitetura sem visão geral. O Core nunca as grava sozinho: o agente pergunta (uma por
 vez) ou as registra via `add_gaps` (ex.: `status: deferred` quando o usuário não quer responder). Campos
 com lacuna já registrada — inclusive adiada ou resolvida — não são sugeridos novamente.
+
+## D28 — Datas relativas
+
+`services/dates.py` resolve expressões em português contra `vault.now()` no fuso configurado (semana começa
+na segunda). Dia da semana simples = próxima ocorrência após hoje (`sexta` numa terça = esta sexta). São
+ambíguos (`ambiguous: true` + `alternatives`) e exigem confirmação `ambiguous_date` nas escritas: o dia da
+semana igual a hoje, `próxima <dia>` quando o dia ainda está à frente nesta semana, e `dd/mm` sem ano já passado.
+`esta/nesta semana` e `próxima semana` são períodos (segunda a domingo). Os campos de data das entradas
+(`due_date`, `when`, `starts_at`, `date`) aceitam ISO ou expressão; a resolução volta em `resolved_dates`.
+
+## D29 — Compromissos
+
+- Arquivo pelo mês de `starts_at` no fuso configurado; reagendar para outro mês move o registro.
+- Sem horário: `CONFIRMATION_REQUIRED` `missing_time`; `confirmed` não basta — só `all_day: true` cria sem horário
+  (00:00 local, `ends_at` vazio). Duração nunca é inventada; ao reagendar, uma duração já conhecida é mantida (aviso).
+- Conflito = sobreposição com outro compromisso `scheduled` (sem término = instante; mesmo início conflita;
+  encostados não conflitam; dia inteiro não conflita). Padrão: `conflicts` + `warnings`, sem bloquear.
+  `agenda.confirm_conflicts: true` (novo campo) ou modo conservador → confirmação `schedule_conflict`.
+- Mesmo título e mesmo início → nada é criado (`duplicate: true`); mesmo título no mesmo dia → `possible_duplicate`.
+- Cancelar/concluir mantém o registro e `history` (valores anteriores em `previous`); a nota de reunião vinculada
+  nunca é alterada. Reagendar um cancelado exige `status: scheduled` explícito.
+- `agenda list` sem filtros mostra de hoje em diante, sem cancelados (`--all` inclui).
+
+## D30 — Pendências
+
+- Um arquivo (`pendencias/tarefas.yaml`); campos canônicos da spec sempre visíveis (inclusive `null`).
+- Novos campos opcionais: `notes` (contexto acrescentado depois, com origem) e `source` (origem da captura),
+  também `source` em compromissos.
+- Mesma tarefa aberta (título normalizado igual e mesmo responsável) → reconhecida, nada criado (`tasks.confirm`
+  no diário). Parecida (Jaccard ≥ 0,5 com ao menos 2 palavras em comum) → `possible_duplicate` com candidatos: a
+  equivalência semântica ("repo" x "repositório") é decisão do agente com o usuário.
+- Título igual a uma tarefa concluída → `repeats_completed_task`, dispensado quando a nova tarefa cita a antiga em
+  `related_ids` (nova execução, CV-023). Reabrir uma concluída → `reopen_completed_task`.
+- Responsável: `assignee_id` ou `assignee_name`; um nome que identifica exatamente uma pessoa é vinculado, homônimos
+  → `AMBIGUOUS_MATCH`, nome desconhecido fica só como nome (aviso). Nunca atribui ao usuário por padrão.
+- Concluir registra `completed_at` (momento da comunicação); concluir de novo não gera segunda conclusão.
+- `related_ids` aceita notas e outras tarefas. Filtro por projeto inclui tarefas de reuniões relacionadas ao projeto
+  (`via_meeting`).
+
+## D31 — Reuniões
+
+- Criadas por propostas `memory.create` (provenance, diário, índice, commit). Reunião não é "tópico novo": não
+  exige `new_topic`; duplicata = mesmo título na mesma data.
+- Status padrão: `scheduled` se data/horário ainda estão à frente, senão `completed`. Horário não é inventado.
+- Participantes identificados viram `participant_ids` e o nome canônico; homônimos ficam só como nome (aviso).
+- `meetings note`: entradas por tipo (`discussion` → Discussões, `decision` → Decisões, `question` → Dúvidas em
+  aberto, `next_step`, `risk`, `context`, `agenda`, `objective`); `tasks` viram pendências com
+  `source_meeting_id` e os assuntos da reunião em `related_ids`, mais uma linha em Pendências — tudo num commit.
+- Reunião ativa = `in_progress` (sem estado oculto). Termo ("Atlas") casa título/aliases/entidades e notas
+  relacionadas; mais de uma → `AMBIGUOUS_MATCH`; `date` desambigua.
+- Correções da ata: `replaces` + `reason` obrigatório (também em `memory.correct`/`mode: replace` sobre reuniões).
+- `summarize` só devolve o que está registrado (`notice` quando não há decisões/ata); para um compromisso sem nota,
+  devolve o compromisso e "não há ata".
+
+## D32 — Exclusão e encerramento com registros operacionais
+
+`memory.delete` remove o ID excluído de `related_ids`, `blocked_by`, `assignee_id`, `source_meeting_id`
+(tarefas) e `related_ids`, `participant_ids`, `meeting_id` (compromissos) na mesma transação, com entrada no
+`history`; os nomes são mantidos. Projeto que passa a `completed`/`cancelled`/`archived` com tarefas abertas
+gera aviso — as tarefas nunca são concluídas automaticamente.
+

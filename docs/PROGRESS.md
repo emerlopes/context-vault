@@ -81,28 +81,38 @@ uv run context-vault --help  # CLI
 - [x] Testes: classificação (conhecido/desconhecido, sigla ambígua, homônimos, duplicado, contraditório),
       CV-006, CV-010–CV-014, CV-031–CV-035, CV-037–CV-040, privacidade, renomeação, exclusão (144 testes)
 
-## Etapa 4 — Módulos operacionais ⬜
+## Etapa 4 — Módulos operacionais ✅
 
-> **Ponto de partida (handoff da Etapa 3):**
-> - Modelos já existem: `models/agenda.py` (`Appointment`, `AgendaFile`, `history`) e `models/tasks.py`
->   (`Task`, `TasksFile`, `OPEN_STATUSES`); leitura em `services/records.py` (ainda sem escrita).
-> - Escritas devem seguir o padrão de `services/proposals.py`/`inbox.py`: `Transaction` (lock + WAL +
->   diário + commit), `request_id` idempotente, `privacy.scan`/`guard_credentials` nos textos.
-> - Datas: `vault.now()` no fuso configurado; `CONTEXT_VAULT_NOW` nos testes (fixo em 2026-10-20 09:00 -03:00).
-> - Reuniões são notas `meeting` (`reunioes/AAAA/MM/`, template em `services/templates.py`); correções de ata
->   podem reutilizar `SectionEditor.replace/retract` (histórico preservado).
-> - Pendente da Etapa 3: `memory.delete` só avisa (`warnings`) sobre tarefas/compromissos que referenciam a nota
->   excluída — tratar quando houver escrita de tarefas/agenda.
-> - Cenários do catálogo: grupos C (CV-016–CV-027), G (CV-041–CV-045) e H (CV-046–CV-051+).
+- [x] Agenda: `agenda/AAAA/MM.yaml`, `agenda add|list|update|cancel|complete|read` (`--dry-run` no add);
+      `list --date/--from/--to/--at/--next/--query/--related` (datas relativas e períodos aceitos)
+- [x] Detecção de conflitos: `conflicts` + aviso, não bloqueia (bloqueia só com `agenda.confirm_conflicts: true`
+      ou modo conservador → `schedule_conflict`)
+- [x] Datas relativas (`hoje`, `amanhã`, `quinta`, `sexta`, `próxima semana`, `dd/mm`, `daqui a N dias`, horários e
+      intervalos) — `dates resolve`; ambiguidades (`próxima quinta`, dia da semana = hoje) → `ambiguous_date`
+- [x] Sem horário → `missing_time` (pergunta); só cria sem horário com `all_day: true`. Duração nunca inventada
+- [x] Reuniões: `meetings create|list|read|update|note|summarize|start|end|active` (notas `meeting` via propostas;
+      a partir de compromisso com `appointment_id`; pendências extraídas na mesma transação)
+- [x] Preservação da ata: correções só com `replaces` + `reason` (original em `## Histórico`); troca de data move o
+      arquivo e registra no histórico
+- [x] Reunião ativa = status `in_progress` (`meetings start`); anotação sem reunião explícita → ativa, ou
+      `NOT_FOUND`/`AMBIGUOUS_MATCH` (nunca escolhe a mais recente — CV-043)
+- [x] Pendências: `tasks add|list|update|complete|read`; filtros responsável, projeto/relacionado (inclui via reunião),
+      status, `--overdue`, `--due 'esta semana'`, `--meeting <id|last>`; duplicata exata reconhecida, parecida →
+      `possible_duplicate`, nova execução de concluída → `repeats_completed_task`, reabrir → `reopen_completed_task`
+- [x] Pendente da Etapa 3 resolvido: `memory.delete` remove referências em tarefas/compromissos (mesma transação);
+      projeto encerrado avisa sobre pendências abertas sem concluí-las (CV-027)
+- [x] Testes: datas, agenda (CV-046–CV-051), pendências (CV-016–CV-027), reuniões (CV-041–CV-045, cenário C),
+      reunião ativa, correção de ata, exclusão com referências (213 testes)
 
-- [ ] Agenda: `agenda/AAAA/MM.yaml`, `add`, `list --date/--from/--to`, `update`, `cancel`, `complete`
-- [ ] Detecção de conflitos (alerta, não bloqueia)
-- [ ] Resolução de datas relativas (`hoje`, `amanhã`, `quinta`, `sexta`, `próxima semana`) — comando `dates resolve`
-- [ ] Reuniões: `meetings create/list/read/update/note/summarize`, arquivo por reunião em `reunioes/AAAA/MM/`
-- [ ] Preservação da ata (correções rastreáveis, sem reescrita silenciosa)
-- [ ] Reunião ativa (associação de anotações)
-- [ ] Pendências: `tasks add/list/update/complete`, filtros (responsável, projeto, status, atraso, vencimento na semana)
-- [ ] Testes de agenda, reuniões e pendências
+> **Ponto de partida (handoff da Etapa 4):**
+> - Serviços: `services/agenda.py`, `services/tasks.py`, `services/meetings.py`, `services/dates.py`;
+>   escrita YAML compartilhada em `services/records.py` (`render_tasks`, `render_agenda`, `replay`,
+>   `link_participants`, `resolve_person`). CLI em `cli/operations.py`.
+> - Briefings (Etapa 5) podem reutilizar `meetings.summarize()` (seções da ata + tarefas da reunião),
+>   `agenda.list_appointments(day=...)` (itens com `related`, `meeting`, `conflicts`) e
+>   `tasks.list_tasks(related=..., overdue=True)`.
+> - `meetings brief` deve separar o registrado das sugestões da IA (spec §11.4) e nunca inferir decisões da pauta.
+> - Relações tipadas de tarefas/compromissos ainda são só `related_ids` (sem tipo) — avaliar na Etapa 5.
 
 ## Etapa 5 — Relacionamentos e recuperação contextual ⬜
 
@@ -153,3 +163,4 @@ uv run context-vault --help  # CLI
 | 2026-10-20 | 1 | Fundação: projeto Python, config, modelos, segurança de caminhos, Git, `init`/`status`/`validate`, testes. |
 | 2026-10-20 | 2 | Memória: editor de seções, transações com WAL/lock, diário, índices, catálogo em cache, busca híbrida, `read`, `propose`/`apply`, idempotência, inbox, lacunas. 97 testes. |
 | 2026-10-20 | 3 | Conhecimento: ADRs substituídos, contradições + `replaces`, hipóteses, marcos/entregas/bloqueios, vínculos pessoa↔projeto/time, `resolve`, filtros de privacidade, referências ao renomear/mover, `memory.delete`, lacunas sugeridas, `projects …`. 144 testes. |
+| 2026-10-20 | 4 | Operacional: datas relativas (`dates resolve`), agenda com conflitos/reagendamento/cancelamento, pendências com duplicatas/histórico/filtros, reuniões (criação, reunião ativa, anotações com pendências, correções rastreáveis, resumo), exclusão limpando referências, aviso de projeto encerrado. 213 testes. |

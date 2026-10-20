@@ -11,7 +11,7 @@ from typing import Optional
 import typer
 
 from .. import __version__
-from . import inbox, knowledge, memory, repository
+from . import inbox, knowledge, memory, operations, repository
 from .support import OutputFormat, state
 
 app = typer.Typer(
@@ -43,6 +43,7 @@ repository.register(app)
 memory.register(app)
 inbox.register(app)
 knowledge.register(app)
+operations.register(app)
 
 
 def main() -> None:  # pragma: no cover - entry point

@@ -123,6 +123,7 @@ def validate_repository(vault: Vault) -> ValidationReport:
 
     # Agenda
     appointments = 0
+    appointment_refs: list[tuple[str, str, list[str]]] = []
     for rel in vault.iter_agenda_files():
         try:
             data = load_yaml(vault.path(rel).read_text(encoding="utf-8")) or {}
@@ -136,6 +137,8 @@ def validate_repository(vault: Vault) -> ValidationReport:
         parts = Path(rel).with_suffix("").parts  # agenda/AAAA/MM
         for appt in agenda.appointments:
             appointments += 1
+            appointment_refs.append((rel, appt.id, [*appt.related_ids, *appt.participant_ids,
+                                                   *([appt.meeting_id] if appt.meeting_id else [])]))
             if appt.id in all_ids:
                 report.error("DUPLICATE_ID", rel, f"ID duplicado {appt.id}")
             all_ids.add(appt.id)
@@ -174,6 +177,11 @@ def validate_repository(vault: Vault) -> ValidationReport:
             for target in refs:
                 if target not in all_ids:
                     report.error("BROKEN_REFERENCE", TASKS_YAML, f"Tarefa {task.id} referencia ID inexistente {target}")
+
+    for rel, appt_id, refs in appointment_refs:
+        for target in refs:
+            if target not in all_ids:
+                report.error("BROKEN_REFERENCE", rel, f"Compromisso {appt_id} referencia ID inexistente {target}")
 
     report.counts = {**dict(sorted(by_type.items())), "appointments": appointments, "tasks": tasks_count}
     return report
