@@ -37,33 +37,38 @@ uv run context-vault --help  # CLI
 - [x] Comandos `init`, `status`, `validate`
 - [x] Testes unitários da fundação
 
-## Etapa 2 — Memória (notas, índice, busca, propostas) ⬜
+## Etapa 2 — Memória (notas, índice, busca, propostas) ✅
 
-- [ ] Repositório de notas: criar / ler / atualizar seção (merge, append, replace) / renomear / mover / arquivar
-- [ ] Revisão por conteúdo (`sha256:`) e `expected_revision`
-- [ ] Locks de escrita (`.context-vault/locks/`) com timeout e remoção de lock órfão
-- [ ] Transação com write-ahead em `.context-vault/journal/pending/` + recuperação de operação interrompida
-- [ ] Diário de eventos `.context-vault/journal/YYYY/MM/YYYY-MM-DD.md`
-- [ ] Origem (`source`) registrada nas alterações (`user`, `meeting`, `document`, `agent_inference`, `import`)
-- [ ] Indexador: `INDEX.md` + `.context-vault/index.json` derivados dos metadados
-- [ ] `index rebuild` com detecção de IDs duplicados, links quebrados, metadados inválidos
-- [ ] Busca híbrida (título, alias, ID, entidade, tag, conteúdo, relações) com score e trechos
-- [ ] `search`, `read <id>`
-- [ ] `propose` (valida e retorna plano/diff + requisitos de confirmação) e `apply` (persiste + commit)
-- [ ] Idempotência por `request_id`
-- [ ] Detecção de duplicação (mesmo conteúdo já presente na seção)
-- [ ] Inbox: `inbox add`, `inbox list`, `inbox classify <id>`
-- [ ] Testes: persistência, índice, busca, idempotência, concorrência, recuperação
+- [x] Repositório de notas: criar / ler / atualizar seção (merge, append, replace) / renomear / mover / arquivar / relacionar / metadados
+- [x] Revisão por conteúdo (`sha256:`) e `expected_revision` → `REVISION_CONFLICT`
+- [x] Lock de escrita (`.context-vault/locks/write.lock`) com timeout e remoção de lock órfão
+- [x] Transação com write-ahead em `.context-vault/journal/pending/` + rollback / roll-forward (`recover`, automático na próxima escrita)
+- [x] Diário de eventos `.context-vault/journal/AAAA/MM/AAAA-MM-DD.md` (`journal list`)
+- [x] Origem registrada em cada bloco (`<!-- cv:event=... source=... -->`) e no diário; `agent_inference` marcado como não confirmado
+- [x] Indexador: `INDEX.md` + `.context-vault/index.json` derivados dos metadados, atualizados em toda escrita
+- [x] `index rebuild` / `index check` com detecção de IDs duplicados, links quebrados, metadados inválidos, local errado
+- [x] Catálogo incremental em cache (`.context-vault/cache/catalog.json`) — 2.000 notas: rebuild 1,4 s, busca 0,45 s
+- [x] Busca híbrida (ID, título, alias, entidade, tag, descrição, seção, conteúdo, relações, pendências, agenda, inbox, diário) com score explicável e trechos; histórico pesa menos
+- [x] `search`, `read <id|prefixo|caminho>` (relações, backlinks, pendências, compromissos, `--history`)
+- [x] `propose` (plano + diff + confirmações exigidas, sem gravar) e `apply` (persiste + índice + diário + commit)
+- [x] Confirmações do modo equilibrado: `new_topic`, `possible_duplicate`, `conflicting_update`, `archive`, `medium/low_confidence`, `conservative_mode` → `CONFIRMATION_REQUIRED`
+- [x] Idempotência por `request_id` (`.context-vault/requests.jsonl`); reuso com conteúdo diferente é recusado
+- [x] Detecção de duplicação (conteúdo equivalente na seção → `memory.confirm`, sem repetir texto)
+- [x] Inbox: `inbox add`, `inbox list`, `inbox classify <id> [--target|--proposal]`, `inbox discard`
+- [x] Lacunas de conhecimento (`knowledge_gaps`, doc de assistência §8): `add_gaps` / `resolve_gaps` (resolved/deferred), `gaps list`
+- [x] Testes: persistência, índice, busca, idempotência, concorrência, recuperação, inbox, lacunas (97 testes)
 
 ## Etapa 3 — Módulos de conhecimento ⬜
 
-- [ ] Templates de seções por tipo (domínio, projeto, arquitetura, ADR, pessoa, time)
-- [ ] Numeração automática de ADR e `supersedes` / `superseded_by`
-- [ ] Contradições: seção "Histórico" com estado anterior preservado, marcação de fato substituído
+- [x] Templates de seções por tipo (feito na Etapa 2 — `services/templates.py`)
+- [ ] `supersedes` / `superseded_by` entre ADRs (numeração automática já feita na Etapa 2)
+- [ ] Contradições: detecção de afirmação conflitante no Core (preservação do estado anterior via `memory.correct` já feita na Etapa 2)
 - [ ] Fatos x hipóteses (`agent_inference` marcado)
 - [ ] Projetos: status permitidos, marcos/entregas com data, bloqueios
 - [ ] Pessoas/times: desambiguação de homônimos (`AMBIGUOUS_MATCH`), filtros de privacidade
-- [ ] Atualização de referências ao renomear
+- [ ] Atualização de referências ao renomear (IDs já estáveis; falta atualizar `entities`/menções em outras notas)
+- [ ] Exclusão controlada (`memory.delete`, exige `allow_destructive_operations` + confirmação)
+- [ ] Lacunas: criar a partir dos fluxos do agente (Exemplos B–H do doc de assistência)
 - [ ] Testes de classificação (assunto conhecido/desconhecido, sigla ambígua, múltiplos candidatos, duplicado, contraditório)
 
 ## Etapa 4 — Módulos operacionais ⬜
@@ -122,3 +127,4 @@ uv run context-vault --help  # CLI
 | Data | Etapa | Resumo |
 |------|-------|--------|
 | 2026-10-20 | 1 | Fundação: projeto Python, config, modelos, segurança de caminhos, Git, `init`/`status`/`validate`, testes. |
+| 2026-10-20 | 2 | Memória: editor de seções, transações com WAL/lock, diário, índices, catálogo em cache, busca híbrida, `read`, `propose`/`apply`, idempotência, inbox, lacunas. 97 testes. |

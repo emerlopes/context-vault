@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .common import AwareDatetime, EntityId, Model
+from .common import AwareDatetime, EntityId, KnowledgeGap, Model
 
 
 class AppointmentStatus(str, Enum):
@@ -37,6 +37,7 @@ class Appointment(Model):
     location: str | None = None
     status: AppointmentStatus = AppointmentStatus.SCHEDULED
     history: list[AppointmentHistoryEntry] = Field(default_factory=list)
+    knowledge_gaps: list[KnowledgeGap] = Field(default_factory=list)
     created_at: AwareDatetime
     updated_at: AwareDatetime
 

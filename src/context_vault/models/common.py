@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, ConfigDict
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from ..ids import is_valid_id
 
@@ -82,3 +82,28 @@ class Source(Model):
     reference: str | None = None
     meeting_id: EntityId | None = None
     original_text: str | None = None
+
+
+class GapStatus(str, Enum):
+    UNKNOWN = "unknown"      # still open, may be asked when relevant
+    DEFERRED = "deferred"    # user postponed: do not ask again without new need
+    RESOLVED = "resolved"
+
+
+class GapPriority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class KnowledgeGap(Model):
+    """Structured missing information attached to a record (not a task)."""
+
+    id: EntityId | None = None
+    field: str = Field(min_length=1)
+    question: str | None = None
+    status: GapStatus = GapStatus.UNKNOWN
+    priority: GapPriority = GapPriority.MEDIUM
+    created_at: AwareDatetime | None = None
+    resolved_at: AwareDatetime | None = None
+    answer: str | None = None

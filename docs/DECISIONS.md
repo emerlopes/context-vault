@@ -94,3 +94,67 @@ configurada, os commits usam `ContextVault <context-vault@localhost>` apenas naq
 
 `index.json` e `INDEX.md` são versionados (derivados, mas facilitam auditoria);
 `locks/`, `cache/` e `journal/pending/` são ignorados.
+
+## D10 — Lock único por repositório
+
+Um lock global de escrita (`.context-vault/locks/write.lock`) serializa todas as escritas. A
+concorrência lógica entre agentes é tratada por `expected_revision` (sha256 do arquivo): quem
+leu uma versão antiga recebe `REVISION_CONFLICT`. Lock órfão: processo morto no mesmo host
+ou mais de 300 s. Timeout padrão 10 s (`CONTEXT_VAULT_LOCK_TIMEOUT`).
+
+## D11 — Transações com WAL
+
+Antes de alterar cada arquivo, o conteúdo original vai para
+`.context-vault/journal/pending/<txid>.json`. O commit Git leva `context-vault-tx: <txid>` na
+mensagem. Recuperação: se o commit com aquele txid existe → roll-forward; senão → rollback.
+Falha no Git com `auto_commit: true` desfaz a operação inteira (nada é declarado salvo sem
+persistência confirmada). Só os arquivos tocados pela transação entram no commit.
+
+## D12 — Origem dentro do Markdown
+
+Cada bloco inserido recebe um comentário HTML invisível
+`<!-- cv:event=<id> source=<tipo> at=<data> [meeting=..] [ref=..] [effective=..] -->`.
+O evento correspondente fica no diário com o texto original quando informado
+(`source.original_text`). Inferências (`agent_inference`) recebem o prefixo visível
+`_(Inferência — não confirmada)_`.
+
+## D13 — Modos de alteração de seção
+
+- `merge` (padrão): adiciona só se o conteúdo normalizado ainda não estiver na seção; se estiver,
+  nada muda no arquivo e o diário registra `memory.confirm` (nova evidência sem duplicar texto).
+- `append`: sempre adiciona.
+- `replace` / `memory.correct`: substitui o corpo e move o estado anterior para `## Histórico`
+  (citado, com data e motivo). Exige confirmação quando `confirm_conflicting_updates`.
+
+Novas seções entram antes de `Histórico`/`Referências`. Seções são localizadas sem diferenciar
+maiúsculas/acentos.
+
+## D14 — Confirmações (modo equilibrado)
+
+`apply` recusa com `CONFIRMATION_REQUIRED` (exit 11, `details.reasons`) quando houver: tópico novo,
+possível duplicata (mesmo título/alias e tipo), correção, arquivamento, ou classificação `medium`/`low`.
+O agente pergunta ao usuário e reenvia com `"confirmed": true`. `autonomy: conservative` exige
+confirmação para toda alteração; `autonomous` dispensa tópico novo e arquivamento.
+
+## D15 — Idempotência
+
+`.context-vault/requests.jsonl` (versionado) guarda `request_id` → hash do conteúdo + resultado.
+Repetir o mesmo pedido devolve o resultado original com `idempotent_replay: true` (o campo `commit`
+do replay é `null`; use `read --history`). Mesmo `request_id` com conteúdo diferente →
+`VALIDATION_ERROR`. Pedidos recusados (confirmação, conflito) não são registrados.
+
+## D16 — Catálogo em cache
+
+`.context-vault/cache/catalog.json` (ignorado pelo Git) guarda o parse de cada nota por
+(mtime_ns, tamanho). Índices e busca só reprocessam o que mudou; apagar o cache é seguro.
+
+## D17 — Lacunas de conhecimento
+
+Campo `knowledge_gaps` em notas, tarefas e compromissos: `{id, field, question, status
+(unknown|deferred|resolved), priority, answer}`. Lacunas não são tarefas. `deferred` indica que o
+usuário adiou e o agente não deve repetir a pergunta sem nova necessidade.
+
+## D18 — `read` aceita prefixo
+
+`read` aceita ID completo, prefixo com 8+ caracteres (`AMBIGUOUS_MATCH` se houver mais de um) ou
+caminho relativo da nota.

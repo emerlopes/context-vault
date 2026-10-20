@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
-from .common import EntityId, Model, Relation, Source
+from .common import EntityId, KnowledgeGap, Model, Relation, Source
 from .notes import NoteType
 
 
@@ -59,6 +59,14 @@ class NewNote(Model):
     slug: str | None = None
 
 
+class GapResolution(Model):
+    """Resolve or defer a knowledge gap, matched by gap id or by field name."""
+
+    gap: str = Field(min_length=1)
+    status: Literal["resolved", "deferred"] = "resolved"
+    answer: str | None = None
+
+
 class Proposal(Model):
     schema_version: Literal[1] = 1
     request_id: str = Field(min_length=1, max_length=200)
@@ -74,6 +82,9 @@ class Proposal(Model):
     relations: list[Relation] = Field(default_factory=list)
     new_title: str | None = None
     new_path: str | None = None
+    reason: str | None = None
+    add_gaps: list[KnowledgeGap] = Field(default_factory=list)
+    resolve_gaps: list[GapResolution] = Field(default_factory=list)
     source: Source = Field(default_factory=Source)
 
     @model_validator(mode="after")
@@ -92,8 +103,8 @@ class Proposal(Model):
             raise ValueError("memory.move exige 'new_path'")
         if op is ProposalOperation.MEMORY_RELATE and not self.relations:
             raise ValueError("memory.relate exige 'relations'")
-        if op is ProposalOperation.MEMORY_UPDATE_META and not self.meta:
-            raise ValueError("memory.update_meta exige 'meta'")
+        if op is ProposalOperation.MEMORY_UPDATE_META and not (self.meta or self.add_gaps or self.resolve_gaps):
+            raise ValueError("memory.update_meta exige 'meta', 'add_gaps' ou 'resolve_gaps'")
         return self
 
     def all_changes(self) -> list[SectionChange]:

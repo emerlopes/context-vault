@@ -8,7 +8,7 @@ from typing import Annotated, Literal, Union
 
 from pydantic import Field, TypeAdapter, field_validator
 
-from .common import AwareDatetime, EntityId, Model, Relation
+from .common import AwareDatetime, EntityId, KnowledgeGap, Model, Relation
 
 
 class NoteType(str, Enum):
@@ -71,6 +71,7 @@ class NoteBase(Model):
     tags: list[str] = Field(default_factory=list)
     related_ids: list[EntityId] = Field(default_factory=list)
     relations: list[Relation] = Field(default_factory=list)
+    knowledge_gaps: list[KnowledgeGap] = Field(default_factory=list)
     created_at: AwareDatetime
     updated_at: AwareDatetime
 

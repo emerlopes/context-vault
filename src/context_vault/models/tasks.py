@@ -8,7 +8,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from .common import AwareDatetime, EntityId, Model
+from .common import AwareDatetime, EntityId, KnowledgeGap, Model
 from .notes import Priority
 
 
@@ -42,6 +42,7 @@ class Task(Model):
     source_meeting_id: EntityId | None = None
     blocked_by: list[EntityId] = Field(default_factory=list)
     history: list[TaskHistoryEntry] = Field(default_factory=list)
+    knowledge_gaps: list[KnowledgeGap] = Field(default_factory=list)
     created_at: AwareDatetime
     updated_at: AwareDatetime
     completed_at: AwareDatetime | None = None

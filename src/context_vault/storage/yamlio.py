@@ -14,7 +14,8 @@ import yaml
 
 
 class _Dumper(yaml.SafeDumper):
-    pass
+    def ignore_aliases(self, data: Any) -> bool:  # never emit &anchors / *aliases
+        return True
 
 
 def _repr_datetime(dumper: yaml.SafeDumper, value: datetime) -> yaml.Node:

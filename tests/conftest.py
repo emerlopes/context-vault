@@ -27,11 +27,30 @@ class Cli:
         self.repo = repo
         self.runner = CliRunner()
 
-    def __call__(self, *args: str, expect: int | None = 0) -> dict:
-        result = self.runner.invoke(app, ["--repo", str(self.repo), *args])
+    def __call__(self, *args: str, expect: int | None = 0, stdin: str | None = None) -> dict:
+        result = self.runner.invoke(app, ["--repo", str(self.repo), *args], input=stdin)
         if expect is not None:
             assert result.exit_code == expect, result.output
         return json.loads(result.stdout)
+
+    def apply(self, proposal: dict, expect: int | None = 0) -> dict:
+        return self("apply", "--proposal", "-", expect=expect, stdin=json.dumps(proposal))
+
+    def propose(self, proposal: dict, expect: int | None = 0) -> dict:
+        return self("propose", "--input", "-", expect=expect, stdin=json.dumps(proposal))
+
+    def create(self, note_type: str, title: str, *, request_id: str | None = None, changes=None, **note) -> dict:
+        proposal = {
+            "request_id": request_id or f"create-{note_type}-{title}",
+            "operation": "memory.create",
+            "confirmed": True,
+            "note": {"type": note_type, "title": title, **note},
+            "changes": changes or [],
+        }
+        return self.apply(proposal)
+
+    def text(self, rel: str) -> str:
+        return (self.repo / rel).read_text(encoding="utf-8")
 
 
 @pytest.fixture

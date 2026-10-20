@@ -54,7 +54,7 @@ def test_validate_ok_and_detects_problems(cli, vault_repo):
     _write_note(vault_repo, "projetos/d.md", _meta(type="project", related_ids=[new_id()]))
     (vault_repo / "dominios/e.md").write_text("sem frontmatter")
     out = cli("validate", expect=5)
-    codes = sorted(i["code"] for i in out["issues"])
+    codes = sorted(i["code"] for i in out["issues"] if i["severity"] == "error")
     assert codes == ["BROKEN_REFERENCE", "DUPLICATE_ID", "INVALID_METADATA", "WRONG_LOCATION"]
 
 
