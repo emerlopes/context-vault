@@ -1,7 +1,8 @@
 # ContextVault — Plano de implementação e progresso
 
 Especificação: [main.md](main.md). Complementos: [assistência_inteligente_anotacoes.md](assistência_inteligente_anotacoes.md)
-(captura assistida — impacta Etapas 2, 3 e 6) e [catalogo_de_testes.md](catalogo_de_testes.md) (ainda vazio — usar na Etapa 7).
+(captura assistida — impacta Etapas 2, 3 e 6) e [catalogo_de_testes.md](catalogo_de_testes.md)
+(cenários CV-xxx, grupos A–M — cada etapa deve cobrir os cenários do seu módulo; validação completa na Etapa 7).
 Decisões técnicas: [DECISIONS.md](DECISIONS.md).
 
 Cada etapa foi dimensionada para caber em uma sessão de trabalho. Ao final de cada sessão,
@@ -105,6 +106,7 @@ uv run context-vault --help  # CLI
 ## Etapa 7 — Testes de cenário e robustez ⬜
 
 - [ ] Cenários A–G da especificação (end-to-end via CLI)
+- [ ] Catálogo de testes (grupos A–M, regras R01–R12) — nível Core automatizado; nível agente documentado no modelo §18
 - [ ] Testes de segurança (prompt injection tratado como dado, symlinks, schema inválido)
 - [ ] Multiagente: mesmo repositório, operações concorrentes
 - [ ] Portabilidade (caminhos Windows, fins de linha)
