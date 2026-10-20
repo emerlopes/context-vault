@@ -16,6 +16,7 @@ from ..models.tasks import TasksFile
 from ..storage.frontmatter import parse_document
 from ..storage.layout import TASKS_YAML, missing_layout
 from ..storage.yamlio import load_yaml
+from .graph import relation_problem
 from .vault import Vault
 
 
@@ -170,6 +171,14 @@ def validate_repository(vault: Vault) -> ValidationReport:
         for target in meta.referenced_ids():
             if target not in all_ids:
                 report.error("BROKEN_REFERENCE", rel, f"Referência para ID inexistente {target}", target=target)
+    types_by_id = {nid: meta.type for nid, (_, meta) in notes.items()}
+    for rel, meta in notes.values():
+        for relation in meta.relations:
+            target_type = types_by_id.get(relation.target_id)
+            problem = relation_problem(relation.type, meta.type, target_type) if target_type else None
+            if problem:
+                report.warning("INVALID_RELATION", rel, problem["message"], target=relation.target_id,
+                               relation=relation.type.value)
     if tasks:
         for task in tasks.tasks:
             refs = list(task.related_ids) + list(task.blocked_by)

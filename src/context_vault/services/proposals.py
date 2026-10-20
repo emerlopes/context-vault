@@ -30,6 +30,7 @@ from ..storage.markdown import SectionEditor, normalize_title, provenance_commen
 from ..storage.yamlio import revision_of
 from . import knowledge, privacy
 from .contradictions import find_contradictions
+from .graph import check_relations
 from .journal import Event, load_requests, payload_hash
 from .notes import Note, default_filename, load_note_file, note_directory, render_note, unique_path
 from .templates import TEMPLATES
@@ -435,11 +436,28 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
 
     if proposal.relations:
         _check_targets(catalog, [r.target_id for r in proposal.relations], note.meta.id)
+        check_relations(catalog, meta["type"], proposal.relations)
         current = [Relation.model_validate(r) if isinstance(r, dict) else r for r in meta.get("relations", [])]
         merged = _merge_relations(current, proposal.relations)
         if len(merged) != len(current):
             meta["relations"] = merged
             meta_changed = True
+    if proposal.remove_relations:
+        current = [Relation.model_validate(r) if isinstance(r, dict) else r for r in meta.get("relations", [])]
+        drop = {(r.type, r.target_id) for r in proposal.remove_relations}
+        kept = [r for r in current if (r.type, r.target_id) not in drop]
+        missing = drop - {(r.type, r.target_id) for r in current}
+        if missing:
+            result.warnings.append("Relação não encontrada (nada a remover): "
+                                   + ", ".join(f"{t.value} → {i}" for t, i in sorted(missing, key=str)))
+        if len(kept) != len(current):
+            removed = [r for r in current if (r.type, r.target_id) in drop]
+            names = ", ".join(f"`{r.type.value}` → {catalog.get(r.target_id).title if catalog.get(r.target_id) else r.target_id}"
+                              for r in removed)
+            editor.append_history(f"### {label} — Relação removida: {names}"
+                                  + (f"\n\nMotivo: {proposal.reason}" if proposal.reason else "") + f"\n{prov}")
+            meta["relations"] = kept
+            meta_changed = body_changed = True
     if proposal.add_gaps or proposal.resolve_gaps:
         meta_changed |= _apply_gaps(meta, proposal, now)
     if meta["type"] == NoteType.ARCHITECTURE_DECISION.value:
@@ -667,6 +685,7 @@ def _plan_create(vault: Vault, proposal: Proposal, catalog: Catalog, result: Pla
         data["timezone"] = vault.timezone
     meta = _validate_meta(cls, data)
     _check_targets(catalog, meta.referenced_ids())
+    check_relations(catalog, note_type.value, meta.relations)
     if note_type is NoteType.ARCHITECTURE_DECISION:
         taken = [e for e in catalog.valid() if e.type == "architecture_decision"
                  and (e.meta or {}).get("adr_number") == getattr(meta, "adr_number")]

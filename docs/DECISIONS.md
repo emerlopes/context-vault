@@ -287,3 +287,47 @@ semana igual a hoje, `próxima <dia>` quando o dia ainda está à frente nesta s
 `history`; os nomes são mantidos. Projeto que passa a `completed`/`cancelled`/`archived` com tarefas abertas
 gera aviso — as tarefas nunca são concluídas automaticamente.
 
+
+## D33 — Relações tipadas validadas
+
+`services/graph.py` define, para cada tipo da spec §16.2, quais tipos de nota podem ser origem e alvo
+(ex.: `owned_by` só de domínio/projeto/arquitetura/ADR para pessoa/time; `decided_in`/`discussed_in` só para
+reunião; `supersedes` entre notas do mesmo tipo; `part_of` pessoa → time, arquitetura → domínio/projeto...).
+`memory.create`/`memory.relate`/`memory.upsert` recusam combinações inválidas com `VALIDATION_ERROR`
+(`allowed_targets`, `allowed_sources`); `validate` acusa `INVALID_RELATION` (aviso) em notas editadas à mão.
+`related_to` vale entre quaisquer notas. `remove_relations` (em `memory.relate`) remove uma relação por
+tipo + alvo e registra a remoção em `## Histórico` (com `reason`), para que vínculos antigos — como o responsável
+anterior — continuem rastreáveis (CV-053/CV-054).
+
+## D34 — Grafo derivado, consultado nos dois sentidos
+
+Tarefas e compromissos continuam com `related_ids` sem tipo (decisão da Etapa 4 mantida): o grafo deriva arestas
+tipadas de todos os campos com IDs — `relations`/`related_ids`, participações (`memberships`, com `current`),
+`team_ids`/`member_ids`, `supersedes`/`superseded_by`, participantes, bloqueios abertos (`blocks`), `owner` do
+projeto (quando o nome identifica exatamente uma pessoa), responsável da tarefa (`owned_by`), reunião de origem
+(`discussed_in`), `blocked_by` (`blocks`). Uma aresta recebida aparece com o nome inverso (`owned_by` → `owns`,
+`part_of` → `has_part`). Participações encerradas continuam no grafo com `current: false` (`--current` as omite).
+`related <ref>` faz busca em largura (profundidade 1–5, `--type`, `--kind`, `--direction`); referências para IDs
+inexistentes saem em `broken`.
+
+## D35 — `context <termo>`
+
+Resolve o assunto como `read` (ID/prefixo/caminho) ou `resolve` (título/alias/entidade); homônimos →
+`AMBIGUOUS_MATCH`; nada → sucesso com `found: false`, `notice` e menções da busca (o agente responde "não encontrei",
+nunca inventa). A síntese agrupa os vizinhos do grafo por categoria (domínios, sistemas, integrações — notas de
+arquitetura com "integração" no título/tags/aliases —, projetos, decisões vigentes x anteriores x registradas em
+reuniões, pessoas atuais x anteriores, times, reuniões passadas x futuras, agenda futura, pendências **abertas**,
+bloqueios, marcos, lacunas, histórico). Fatos do estado atual vêm por seção; hipóteses/inferências em `unconfirmed`.
+`responsibility.claims` reúne `owner`, `owned_by` e `responsibilities` de pessoas/times que citam o assunto; mais de
+uma pessoa → `divergent: true` (CV-057: apresentar as fontes, não escolher). `empty_categories` lista o que não tem
+registro; `sources` lista os arquivos usados.
+
+## D36 — Briefings
+
+`meetings brief [ref] [--date]` aceita reunião, compromisso, assunto (ID ou termo) ou nada. Sem referência usa a
+reunião em andamento ou a próxima da agenda (`selected_by: next`, com aviso para confirmar); por termo, mais de uma
+reunião futura → `AMBIGUOUS_MATCH`. `daily brief [--date]` é de um único dia (período → `VALIDATION_ERROR`).
+Ambos separam `recorded` (com fontes) de `suggestions` (perguntas e pontos de atenção derivados de registros:
+pendência atrasada/sem responsável/vencendo, dúvida em aberto de reunião anterior, lacuna `unknown`, bloqueio
+aberto, hipótese, objetivo não registrado, conflito de horário), cada sugestão com `basis`. Decisões vêm apenas de
+seções `Decisões` e ADRs — nunca da pauta. O objetivo vem da seção `Objetivo` da nota ou da descrição do compromisso.

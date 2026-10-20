@@ -114,14 +114,29 @@ uv run context-vault --help  # CLI
 > - `meetings brief` deve separar o registrado das sugestões da IA (spec §11.4) e nunca inferir decisões da pauta.
 > - Relações tipadas de tarefas/compromissos ainda são só `related_ids` (sem tipo) — avaliar na Etapa 5.
 
-## Etapa 5 — Relacionamentos e recuperação contextual ⬜
+## Etapa 5 — Relacionamentos e recuperação contextual ✅
 
-- [ ] Relações tipadas validadas (`related_to`, `depends_on`, `owned_by`, ...) com consulta bidirecional
-- [ ] `related <id>` (navegação no grafo, profundidade configurável)
-- [ ] `context <termo>` — síntese "tudo que sabemos" agrupada por categoria
-- [ ] `meetings brief <id>` — dados para briefing de reunião
-- [ ] `daily brief [--date]` — dados para briefing diário
-- [ ] Testes de recuperação por relacionamento, briefings
+- [x] Relações tipadas validadas por tipo de origem/alvo (`related_to`, `depends_on`, `owned_by`, `participates_in`,
+      `discussed_in`, `decided_in`, `blocks`, `supersedes`, `part_of`) em create/relate/upsert e no `validate`
+      (`INVALID_RELATION`); `remove_relations` rastreável no histórico
+- [x] Grafo derivado de notas, tarefas e compromissos (`services/graph.py`), consulta bidirecional com nomes inversos,
+      participações vigentes x encerradas, referências quebradas
+- [x] `related <id>` (profundidade 1–5, `--type`, `--kind`, `--direction`, `--current`)
+- [x] `context <termo>` — síntese "tudo que sabemos" agrupada por categoria, fontes, categorias vazias, hipóteses
+      à parte, responsáveis com detecção de divergência, menções sem relação; `found: false` quando não há registro
+- [x] `meetings brief [ref] [--date]` — registrado x sugestões; seleção por ID, compromisso, assunto, ativa ou próxima
+- [x] `daily brief [--date]` — compromissos em ordem, objetivo, contexto, pendências relacionadas, conflitos,
+      tarefas do dia/atrasadas, marcos, cancelados à parte, pontos de preparação
+- [x] Testes: CV-048, CV-052, CV-053–CV-058 (nível Core), navegação no grafo, validação de relações (229 testes)
+
+> **Ponto de partida (handoff da Etapa 5):**
+> - Serviços novos: `services/graph.py` (`Graph.build`, `related`, `check_relations`, `RELATION_RULES`),
+>   `services/context.py` (`context`, `note_digest`, `section_items`, `note_facts`), `services/briefings.py`
+>   (`meeting_brief`, `daily_brief`). CLI em `cli/retrieval.py` (+ `meetings brief` em `cli/operations.py`).
+> - A skill (Etapa 6) deve orientar: "me prepara para a reunião" → `meetings brief`; "o que tenho hoje" →
+>   `daily brief`; "tudo sobre X" → `context X`; apresentar `suggestions` separadas de `recorded` e citar `sources`.
+> - CV-036 ("o que mudou no Orion nesta semana") ainda depende de `journal list` + `read --history`; avaliar um
+>   filtro por período em `context` na Etapa 7 se os cenários exigirem.
 
 ## Etapa 6 — Skill e adaptadores ⬜
 
@@ -164,3 +179,4 @@ uv run context-vault --help  # CLI
 | 2026-10-20 | 2 | Memória: editor de seções, transações com WAL/lock, diário, índices, catálogo em cache, busca híbrida, `read`, `propose`/`apply`, idempotência, inbox, lacunas. 97 testes. |
 | 2026-10-20 | 3 | Conhecimento: ADRs substituídos, contradições + `replaces`, hipóteses, marcos/entregas/bloqueios, vínculos pessoa↔projeto/time, `resolve`, filtros de privacidade, referências ao renomear/mover, `memory.delete`, lacunas sugeridas, `projects …`. 144 testes. |
 | 2026-10-20 | 4 | Operacional: datas relativas (`dates resolve`), agenda com conflitos/reagendamento/cancelamento, pendências com duplicatas/histórico/filtros, reuniões (criação, reunião ativa, anotações com pendências, correções rastreáveis, resumo), exclusão limpando referências, aviso de projeto encerrado. 213 testes. |
+| 2026-10-20 | 5 | Relacionamentos: validação de relações tipadas, `remove_relations`, grafo bidirecional (`related`), síntese por assunto (`context`), `meetings brief` e `daily brief` com registrado x sugestões. 229 testes. |

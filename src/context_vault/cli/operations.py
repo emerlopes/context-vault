@@ -9,6 +9,7 @@ import typer
 from ..models.agenda import AppointmentStatus
 from ..models.notes import MeetingStatus
 from ..services import agenda as agenda_service
+from ..services import briefings as briefings_service
 from ..services import meetings as meetings_service
 from ..services import tasks as tasks_service
 from ..services.dates import resolve as resolve_date
@@ -256,3 +257,11 @@ def _register_meetings(app: typer.Typer) -> None:
     ) -> None:
         """Dados registrados para o resumo: discussões, decisões, pendências, responsáveis, prazos, dúvidas."""
         run("meetings.summarize", lambda: meetings_service.summarize(open_vault(), ref, date))
+
+    @meetings_app.command("brief")
+    def meetings_brief(
+        ref: Optional[str] = typer.Argument(None, help="Reunião, compromisso ou assunto (padrão: a próxima reunião)."),
+        date: Optional[str] = typer.Option(None, "--date", "-d", help="Restringe a um dia/período."),
+    ) -> None:
+        """Dados para preparar uma reunião: registrado (objetivo, contexto, decisões, pendências, riscos) e sugestões."""
+        run("meetings.brief", lambda: briefings_service.meeting_brief(open_vault(), ref, date))

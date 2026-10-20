@@ -125,6 +125,7 @@ class Proposal(Model):
     changes: list[SectionChange] = Field(default_factory=list)
     meta: dict[str, Any] = Field(default_factory=dict)
     relations: list[Relation] = Field(default_factory=list)
+    remove_relations: list[Relation] = Field(default_factory=list)
     new_title: str | None = None
     new_path: str | None = None
     reason: str | None = None
@@ -151,8 +152,10 @@ class Proposal(Model):
             raise ValueError("memory.rename exige 'new_title'")
         if op is ProposalOperation.MEMORY_MOVE and not self.new_path:
             raise ValueError("memory.move exige 'new_path'")
-        if op is ProposalOperation.MEMORY_RELATE and not self.relations:
-            raise ValueError("memory.relate exige 'relations'")
+        if op is ProposalOperation.MEMORY_RELATE and not (self.relations or self.remove_relations):
+            raise ValueError("memory.relate exige 'relations' ou 'remove_relations'")
+        if op is ProposalOperation.MEMORY_CREATE and self.remove_relations:
+            raise ValueError("'remove_relations' não se aplica a memory.create")
         if op is ProposalOperation.MEMORY_UPDATE_META and not (
                 self.meta or self.add_gaps or self.resolve_gaps or self.has_structured()):
             raise ValueError("memory.update_meta exige 'meta', 'add_gaps', 'resolve_gaps', 'milestones', "
