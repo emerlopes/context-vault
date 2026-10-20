@@ -4,7 +4,7 @@
 > Não edite à mão: rode o comando de novo.
 
 - **Data:** 2026-10-20
-- **Commit do código:** `70e7234+alterações`
+- **Commit do código:** `755641a`
 - **Ambiente:** Python 3.13.3 · Darwin 25.6.0 · darwin
 - **Testes:** 340 — 339 passaram, 0 falharam, 1 ignorados (dependem do sistema operacional)
 - **Nível:** Core/CLI (automatizado). O nível agente está na última seção.
@@ -160,7 +160,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_spec_flows.py::test_scenario_a_new_information_without_context
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -169,7 +169,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_spec_flows.py::test_scenario_b_automatic_update
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -178,7 +178,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_repeated_fact_with_other_words_is_not_duplicated
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -187,7 +187,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_ambiguous_acronym_and_unknown_subject
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -196,7 +196,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_spec_flows.py::test_scenario_g_provisional_capture
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -205,7 +205,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_spec_flows.py::test_scenario_f_correction
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -214,7 +214,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_what_we_know_about_a_subject
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -223,7 +223,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_provisional_person_from_a_mention_is_reused
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -232,7 +232,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_provisional_person_from_a_mention_is_reused
   notes: Integralmente verificável no Core.
@@ -241,7 +241,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_homonyms_require_disambiguation
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -250,7 +250,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_person_project_participation_lifecycle
   notes: Integralmente verificável no Core.
@@ -259,7 +259,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_person_project_participation_lifecycle
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -268,7 +268,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_person_project_participation_lifecycle
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -277,7 +277,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_team_change_keeps_history_and_syncs_members
   notes: Integralmente verificável no Core.
@@ -286,7 +286,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_ambiguous_departure_changes_nothing
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -295,7 +295,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_create_delegated_task
   notes: Integralmente verificável no Core.
@@ -304,7 +304,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_same_task_again_is_not_duplicated
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -313,7 +313,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_add_context_without_duplicating
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -322,7 +322,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_similar_but_different_tasks
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -331,7 +331,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_change_assignee_keeps_history
   notes: Integralmente verificável no Core.
@@ -340,7 +340,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_complete_and_repeat_completion
   notes: Integralmente verificável no Core.
@@ -349,7 +349,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_complete_and_repeat_completion
   notes: Integralmente verificável no Core.
@@ -358,7 +358,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_new_execution_of_completed_task
   notes: Integralmente verificável no Core.
@@ -367,7 +367,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_task_without_assignee
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -376,7 +376,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_relative_due_date
   - tests/unit/test_dates.py::test_next_weekday_still_ahead_is_ambiguous
@@ -386,7 +386,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_overdue_and_week_filters
   notes: Integralmente verificável no Core.
@@ -395,7 +395,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_tasks.py::test_project_closed_warns_open_tasks
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -404,7 +404,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_compound_capture_and_its_repetition
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -413,7 +413,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_compound_capture_and_its_repetition
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -422,7 +422,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_several_tasks_in_one_message
   notes: Integralmente verificável no Core.
@@ -431,7 +431,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_hypothesis_is_marked_and_not_treated_as_fact
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -440,7 +440,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_new_project_does_not_invent_owner_or_dates
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -449,7 +449,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_project_dependency_and_risk
   notes: Integralmente verificável no Core.
@@ -458,7 +458,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_project_dependency_and_risk
   notes: Integralmente verificável no Core.
@@ -467,7 +467,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_project_blocker_lifecycle
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -476,7 +476,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_what_changed_this_week
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -485,7 +485,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_superseding_adr_marks_previous_and_preserves_justification
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -494,7 +494,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_discussion_without_decision
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -503,7 +503,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_knowledge_modules.py::test_superseding_adr_marks_previous_and_preserves_justification
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -512,7 +512,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_spec_flows.py::test_scenario_e_historical_question
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -521,7 +521,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_meetings.py::test_create_meeting_record
   notes: Integralmente verificável no Core.
@@ -530,7 +530,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_meetings.py::test_meeting_notes_with_decision_and_task
   - tests/integration/test_meetings.py::test_task_without_deadline_from_meeting
@@ -541,7 +541,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_meetings.py::test_ambiguous_meeting_is_not_guessed
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -550,7 +550,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_knowledge.py::test_meeting_summary
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -559,7 +559,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_meetings.py::test_meeting_from_appointment_and_without_minutes
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -568,7 +568,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_agenda.py::test_create_appointment_with_relative_date
   - tests/scenarios/test_spec_flows.py::test_scenario_d_contextual_agenda_and_brief
@@ -578,7 +578,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_agenda.py::test_missing_time_asks_before_creating
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -587,7 +587,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_agenda.py::test_daily_agenda_ordered
   - tests/integration/test_retrieval.py::test_daily_brief
@@ -597,7 +597,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_agenda.py::test_conflict_is_reported_not_blocked
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -606,7 +606,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_agenda.py::test_reschedule_preserves_id_and_history
   notes: Integralmente verificável no Core.
@@ -615,7 +615,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_agenda.py::test_cancel_preserves_record_and_meeting_note
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -624,7 +624,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_retrieval.py::test_meeting_brief
   - tests/scenarios/test_spec_flows.py::test_scenario_d_contextual_agenda_and_brief
@@ -634,7 +634,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_retrieval.py::test_remove_relation_is_traceable
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -643,7 +643,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_retrieval.py::test_remove_relation_is_traceable
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -652,7 +652,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_retrieval.py::test_context_overview
   - tests/integration/test_retrieval.py::test_context_project_people_and_tasks
@@ -662,7 +662,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_retrieval.py::test_context_not_found_and_ambiguous
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -671,7 +671,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_retrieval.py::test_context_divergent_responsibility
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -680,7 +680,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/integration/test_retrieval.py::test_context_overview
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -689,7 +689,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_integrity_security.py::test_repeated_request_is_applied_once
   notes: Integralmente verificável no Core.
@@ -698,7 +698,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_integrity_security.py::test_concurrent_update_with_stale_revision
   notes: Integralmente verificável no Core.
@@ -707,7 +707,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_integrity_security.py::test_move_outside_the_repository_is_refused
   - tests/scenarios/test_integrity_security.py::test_paths_outside_the_repository_are_refused[../fora.md]
@@ -722,7 +722,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_integrity_security.py::test_instructions_inside_notes_are_data
   - tests/scenarios/test_integrity_security.py::test_skill_treats_note_content_as_data
@@ -732,7 +732,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_integrity_security.py::test_persistence_failure_is_never_reported_as_saved[.]
   - tests/scenarios/test_integrity_security.py::test_persistence_failure_is_never_reported_as_saved[dominios]
@@ -742,7 +742,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_integrity_security.py::test_index_pointing_to_missing_file
   notes: Integralmente verificável no Core.
@@ -751,7 +751,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_multiagent.py::test_capture_in_one_agent_query_in_another
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -760,7 +760,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_multiagent.py::test_updates_by_different_agents
   notes: Integralmente verificável no Core.
@@ -769,7 +769,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_multiagent.py::test_agent_without_repository_access
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -778,7 +778,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_mention_is_not_a_task
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -787,7 +787,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_suggestion_is_not_a_decision
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -796,7 +796,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_request_is_not_completion
   notes: Integralmente verificável no Core.
@@ -805,7 +805,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_created_repository_is_not_finished_documentation
   notes: Integralmente verificável no Core.
@@ -814,7 +814,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_partial_responsibility_change
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -823,7 +823,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_uncertain_deadline_is_not_chosen
   - tests/unit/test_dates.py::test_vague_expressions_are_ambiguous[come\xe7o do m\xeas que vem]
@@ -835,7 +835,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_same_task_for_two_people_is_not_duplicated
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -844,7 +844,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_same_title_in_different_projects
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -853,7 +853,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Integralmente verificável no Core.
@@ -862,7 +862,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Integralmente verificável no Core.
@@ -871,7 +871,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Integralmente verificável no Core.
@@ -880,7 +880,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Integralmente verificável no Core.
@@ -889,7 +889,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Integralmente verificável no Core.
@@ -898,7 +898,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Integralmente verificável no Core.
@@ -907,7 +907,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
@@ -916,7 +916,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Integralmente verificável no Core.
@@ -925,7 +925,7 @@
   status: PASSOU
   agent: core-cli (sem agente de IA)
   date: '2026-10-20'
-  commit: 70e7234+alterações
+  commit: 755641a
   tests:
   - tests/scenarios/test_catalog_interpretation.py::test_documentation_lifecycle_over_five_days
   notes: Comportamento do agente (perguntas/respostas) validado só no nível agente.
