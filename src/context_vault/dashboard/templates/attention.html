@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/attention-list.html" import attention_list with context %}
+{% block content %}
+<section class="block" id="atencao">
+  {{ section_header("Itens que precisam de atenção", data.items|length, "Ordenados por pesos configurados em config.yaml (dashboard.attention). Os pesos ordenam a lista; não são probabilidades.") }}
+  {{ attention_list(data.items) }}
+</section>
+<section class="block" id="regras">
+  {{ section_header("Regras de priorização") }}
+  <details><summary>Pesos em uso</summary>
+    <div class="table-wrap"><table><thead><tr><th scope="col">Regra</th><th scope="col">Peso</th></tr></thead><tbody>
+    {% for k, v in data.weights|dictsort(by="value", reverse=true) %}<tr><td class="mono">{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </details>
+</section>
+{% endblock %}

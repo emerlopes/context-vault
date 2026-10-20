@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/status-badge.html" import badge with context %}
+{% from "components/task-table.html" import task_table with context %}
+{% from "components/event-list.html" import event_list with context %}
+{% from "components/decision-card.html" import decision_card with context %}
+{% from "components/project-card.html" import progress_bar with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% from "components/source-link.html" import source_link, ref_link, ref_list with context %}
+{% block content %}
+{% set p = data.project %}
+<section class="block" id="identificacao">
+  {{ section_header("Identificação") }}
+  <div class="card" data-cv-item>
+    <div class="row"><h3>{{ p.title }}</h3>{{ badge(p.status, p.status_label) }}</div>
+    {% if p.description %}<p>{{ p.description }}</p>{% endif %}
+    <dl>
+      <dt>Objetivo</dt><dd>{% if data.objective %}{{ data.objective|join(" ") }}{% else %}<span class="muted">Não informado</span>{% endif %}</dd>
+      <dt>Responsável</dt><dd>{{ p.owner_label }}</dd>
+      <dt>Prazo</dt><dd>{{ p.target_label }}</dd>
+      <dt>Prioridade</dt><dd>{{ p.priority or "Não informado" }}</dd>
+    </dl>
+    {{ progress_bar(p.progress) }}
+    {{ source_link(p.source) }}
+  </div>
+</section>
+<section class="block" id="responsaveis">
+  {{ section_header("Responsáveis atuais", data.members_current|length + data.responsible_current|length) }}
+  {% if data.responsible_divergent %}<div class="notice sev-warning" data-cv-item>Há registros diferentes sobre o responsável: {{ data.responsible_current|join(", ") }}. Confirme qual é o vigente.</div>{% endif %}
+  {% if data.responsible_current or data.members_current %}
+  <ul class="list">
+    {% for name in data.responsible_current %}<li data-cv-item>{{ name }} {{ badge("current", "Responsável") }}</li>{% endfor %}
+    {% for x in data.members_current %}<li data-cv-item>{{ ref_link(x.target) }}{% if x.role %} — {{ x.role }}{% endif %} <span class="muted">({{ x.period_label }})</span> {{ badge("current", "Atual") }}</li>{% endfor %}
+  </ul>
+  {% else %}{{ empty("Nenhum responsável registrado.") }}{% endif %}
+</section>
+<section class="block" id="historico-participantes">
+  {{ section_header("Histórico de participantes", data.members_past|length, "Participações encerradas no projeto — não significa saída da empresa.") }}
+  {% if data.members_past %}
+  <ul class="list">{% for x in data.members_past %}<li class="past" data-cv-item>{{ ref_link(x.target) }}{% if x.role %} — {{ x.role }}{% endif %} <span class="muted">({{ x.period_label }})</span> {{ badge("past", "Anterior") }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhuma participação encerrada registrada.</p>{% endif %}
+</section>
+<section class="block" id="tarefas-abertas">
+  {{ section_header("Tarefas abertas", data.open_tasks|length) }}
+  {{ task_table(data.open_tasks, "project-open-tasks", tools=false, empty_title="Nenhuma tarefa aberta.") }}
+</section>
+<section class="block" id="tarefas-concluidas">
+  {{ section_header("Tarefas concluídas", data.completed_tasks|length) }}
+  {{ task_table(data.completed_tasks, "project-done-tasks", tools=false, empty_title="Nenhuma tarefa concluída.") }}
+</section>
+<section class="block" id="riscos-bloqueios">
+  {{ section_header("Riscos e bloqueios") }}
+  <div class="two-cols">
+    <div class="card" data-cv-item><h3>Riscos</h3>{% if p.risks %}<ul>{% for r in p.risks %}<li>{{ r }}</li>{% endfor %}</ul>{% else %}<p class="muted">Nenhum risco registrado.</p>{% endif %}</div>
+    <div class="card" data-cv-item><h3>Bloqueios em aberto</h3>
+      {% if p.open_blockers %}<ul>{% for b in p.open_blockers %}<li>{{ b.description }}{% if b.since %} <span class="muted">(desde {{ b.since }})</span>{% endif %}{% if b.related %} — {{ ref_list(b.related) }}{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">Nenhum bloqueio em aberto.</p>{% endif %}
+      {% if data.resolved_blockers %}<details><summary>Resolvidos ({{ data.resolved_blockers|length }})</summary><ul>{% for b in data.resolved_blockers %}<li>{{ b.description }}{% if b.resolution %} — {{ b.resolution }}{% endif %}</li>{% endfor %}</ul></details>{% endif %}
+    </div>
+    <div class="card" data-cv-item><h3>Dependências</h3>
+      {% if data.dependencies or data.dependency_notes %}<ul>{% for r in data.dependencies %}<li>{{ ref_link(r) }}</li>{% endfor %}{% for t in data.dependency_notes %}<li>{{ t }}</li>{% endfor %}</ul>{% else %}<p class="muted">Nenhuma dependência registrada.</p>{% endif %}
+    </div>
+  </div>
+</section>
+<section class="block" id="entregas">
+  {{ section_header("Marcos e entregas", data.milestones|length) }}
+  {% if data.milestones %}<ul class="list">{% for x in data.milestones %}<li data-cv-item><strong>{{ x.kind_label }}:</strong> {{ x.title }} — {{ x.due_label }} {{ badge(x.status, x.status_label) }}{% if x.overdue %} {{ badge("overdue", "Data passou") }}{% endif %}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhum marco ou entrega registrado.</p>{% endif %}
+</section>
+<section class="block" id="decisoes">
+  {{ section_header("Decisões arquiteturais", data.decisions|length) }}
+  {% if data.decisions %}<div class="grid wide">{% for x in data.decisions %}{{ decision_card(x) }}{% endfor %}</div>{% endif %}
+  {% if data.decision_notes %}<div class="card" data-cv-item><h3>Decisões registradas no projeto</h3><ul>{% for t in data.decision_notes %}<li>{{ t }}</li>{% endfor %}</ul></div>{% endif %}
+  {% if not data.decisions and not data.decision_notes %}<p class="muted">Nenhuma decisão registrada.</p>{% endif %}
+</section>
+<section class="block" id="reunioes">
+  {{ section_header("Reuniões relacionadas", data.meetings|length) }}
+  {% if data.meetings %}<ul class="list">{% for r in data.meetings %}<li data-cv-item>{{ ref_link(r) }}</li>{% endfor %}</ul>{% else %}<p class="muted">Nenhuma reunião relacionada.</p>{% endif %}
+</section>
+<section class="block" id="compromissos">
+  {{ section_header("Compromissos futuros", data.events|length) }}
+  {{ event_list(data.events, "Nenhum compromisso futuro relacionado.") }}
+</section>
+<section class="block" id="historico">
+  {{ section_header("Histórico de alterações", data.history|length + data.activity|length) }}
+  {% if data.history %}<div class="card" data-cv-item><h3>Registrado na nota</h3><ul>{% for h in data.history %}<li>{{ h }}</li>{% endfor %}</ul></div>{% endif %}
+  {% if data.activity %}<ul class="list">{% for a in data.activity %}<li data-cv-item><strong>{{ a.operation_label }}</strong>{% if a.summary %} — {{ a.summary }}{% endif %}<div class="src">{{ a.at_label }}</div></li>{% endfor %}</ul>{% endif %}
+  {% if not data.history and not data.activity %}<p class="muted">Nenhuma alteração registrada.</p>{% endif %}
+</section>
+{% endblock %}

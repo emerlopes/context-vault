@@ -1,0 +1,74 @@
+{% from "components/status-badge.html" import badge with context %}
+{% from "components/source-link.html" import ref_link, ref_list with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% from "components/icon.html" import icon with context %}
+{#
+  Task table with local filters (status, responsável, projeto, prioridade, atrasadas, sem responsável,
+  sem prazo) and sorting. Rows carry data-* tokens prepared by the Core; the script only shows/hides them.
+#}
+{% macro task_table(tasks, table_id, options=none, tools=true, empty_title="Nenhuma tarefa registrada.") %}
+{% if not tasks %}
+{{ empty(empty_title, "As tarefas aparecerão aqui quando forem adicionadas ao ContextVault.") }}
+{% else %}
+{% if tools %}
+<div class="table-tools" data-cv-table-tools="{{ table_id }}" role="group" aria-label="Filtros da tabela">
+  {% if options %}
+  {% for key, label in [("status", "Status"), ("responsible", "Responsável"), ("project", "Projeto"), ("priority", "Prioridade")] %}
+  {% if options.get(key) %}
+  <label class="field"><span>{{ label }}</span>
+    <select data-cv-filter="{{ key }}">
+      <option value="">Todos</option>
+      {% for opt in options[key] %}<option value="{{ opt.value }}">{{ opt.label }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  <label class="check"><input type="checkbox" data-cv-flag="overdue"><span>Atrasadas</span></label>
+  <label class="check"><input type="checkbox" data-cv-flag="unassigned"><span>Sem responsável</span></label>
+  <label class="check"><input type="checkbox" data-cv-flag="nodue"><span>Sem prazo</span></label>
+  <button type="button" data-cv-reset>{{ icon("filter-x") }}<span>Limpar filtros</span></button>
+</div>
+{% endif %}
+<div class="table-wrap">
+<table id="{{ table_id }}" class="responsive">
+  <caption class="sr-only">Tarefas</caption>
+  <thead><tr>
+    <th scope="col"><button type="button" data-cv-sort="title"><span>Título</span>{{ icon("sort", 14, "sort-none") }}{{ icon("chevron-up", 14, "sort-asc") }}{{ icon("chevron-down", 14, "sort-desc") }}</button></th>
+    <th scope="col"><button type="button" data-cv-sort="status"><span>Status</span>{{ icon("sort", 14, "sort-none") }}{{ icon("chevron-up", 14, "sort-asc") }}{{ icon("chevron-down", 14, "sort-desc") }}</button></th>
+    <th scope="col"><button type="button" data-cv-sort="responsible"><span>Responsável</span>{{ icon("sort", 14, "sort-none") }}{{ icon("chevron-up", 14, "sort-asc") }}{{ icon("chevron-down", 14, "sort-desc") }}</button></th>
+    <th scope="col"><button type="button" data-cv-sort="project"><span>Projeto ou assunto</span>{{ icon("sort", 14, "sort-none") }}{{ icon("chevron-up", 14, "sort-asc") }}{{ icon("chevron-down", 14, "sort-desc") }}</button></th>
+    <th scope="col"><button type="button" data-cv-sort="due"><span>Prazo</span>{{ icon("sort", 14, "sort-none") }}{{ icon("chevron-up", 14, "sort-asc") }}{{ icon("chevron-down", 14, "sort-desc") }}</button></th>
+    <th scope="col"><button type="button" data-cv-sort="priority"><span>Prioridade</span>{{ icon("sort", 14, "sort-none") }}{{ icon("chevron-up", 14, "sort-asc") }}{{ icon("chevron-down", 14, "sort-desc") }}</button></th>
+    <th scope="col"><button type="button" data-cv-sort="updated"><span>Atualização</span>{{ icon("sort", 14, "sort-none") }}{{ icon("chevron-up", 14, "sort-asc") }}{{ icon("chevron-down", 14, "sort-desc") }}</button></th>
+    <th scope="col">Origem</th>
+  </tr></thead>
+  <tbody>
+  {% for t in tasks %}
+  <tr data-cv-item data-task-id="{{ t.id }}" class="{{ 'is-overdue' if t.overdue else '' }}"
+      data-f-status="{{ t.status }}"
+      data-f-responsible="{{ (t.responsible_ids|join(' ')) if t.responsible_ids else ('' if t.unassigned or t.responsible_missing else 'name:' ~ t.responsible_label) }}"
+      data-f-project="{{ t.projects|map(attribute='id')|join(' ') }}" data-f-priority="{{ t.priority }}"
+      data-flag-overdue="{{ '1' if t.overdue else '0' }}" data-flag-unassigned="{{ '1' if t.unassigned and t.open else '0' }}"
+      data-flag-nodue="{{ '1' if not t.due_date and t.open else '0' }}"
+      data-s-title="{{ t.title }}" data-s-status="{{ t.status_label }}" data-s-responsible="{{ t.responsible_label }}"
+      data-s-project="{{ t.context_label }}" data-s-due="{{ t.due_date or '9999-12-31' }}"
+      data-s-priority="{{ {'urgent': '0', 'high': '1', 'normal': '2', 'low': '3'}[t.priority] }}"
+      data-s-updated="{{ t.updated_at }}">
+    <td data-label="Título"><strong>{{ t.title }}</strong>{% if t.description %}<div class="sub">{{ t.description }}</div>{% endif %}</td>
+    <td data-label="Status">{{ badge(t.status, t.status_label) }}</td>
+    <td data-label="Responsável">{% if t.responsible_missing %}{{ badge("missing", "Pessoa não encontrada") }}{% elif t.unassigned %}<span class="muted">Não informado</span>{% else %}{{ t.responsible_label }}{% endif %}</td>
+    <td data-label="Projeto ou assunto">{% if t.projects or t.topics %}{{ ref_list(t.projects + t.topics) }}{% else %}<span class="muted">Não informado</span>{% endif %}</td>
+    <td data-label="Prazo">{{ t.due_label }}{% if t.overdue %} {{ badge("overdue", "Atrasada há " ~ t.days_overdue ~ (" dia" if t.days_overdue == 1 else " dias")) }}{% endif %}</td>
+    <td data-label="Prioridade">{{ t.priority_label }}</td>
+    <td data-label="Atualização">{{ t.updated_label }}</td>
+    <td data-label="Origem"><a href="{{ href(t.source.path) }}" title="{{ t.source.path }} · {{ t.id }}">{{ t.source.path }}</a>{% if t.source_meeting %}<div class="sub">Reunião: {{ ref_link(t.source_meeting) }}</div>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="table-count" data-cv-count="{{ table_id }}" aria-live="polite">{{ tasks|length }} registro(s)</p>
+<p class="empty" data-cv-empty="{{ table_id }}" hidden>Nenhuma tarefa corresponde aos filtros.</p>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,30 @@
+{% from "components/status-badge.html" import badge with context %}
+{% from "components/source-link.html" import source_link, ref_list with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% macro event_list(events, empty_title="Nenhum compromisso no período.", context=false) %}
+{% if not events %}
+{{ empty(empty_title, "A agenda é mantida manualmente no ContextVault; os compromissos aparecerão aqui quando forem registrados.") }}
+{% else %}
+<ul class="list">
+{% for e in events %}
+  <li data-cv-item data-event-id="{{ e.id }}">
+    <div class="card-row">
+      <strong>{{ e.date_label }} · {{ e.time_label }}</strong> — {{ e.title }}
+      {% if e.status != "scheduled" %}{{ badge(e.status, e.status_label) }}{% endif %}
+      {% if e.is_today %}{{ badge("current", "Hoje") }}{% endif %}
+      {% if e.conflicts %}{{ badge("overdue", "Conflito: " ~ e.conflicts|join(", ")) }}{% endif %}
+    </div>
+    {% if e.location %}<p class="muted">Local: {{ e.location }}</p>{% endif %}
+    {% if e.participants %}<p class="muted">Participantes: {{ e.participants|join(", ") }}</p>{% endif %}
+    {% if e.related %}<p class="muted">Relacionado a: {{ ref_list(e.related) }}</p>{% endif %}
+    {% if e.meeting %}<p class="muted">Reunião: {{ ref_list([e.meeting]) }}</p>{% endif %}
+    {% if context %}
+      {% if e.related_tasks %}<p>Pendências relacionadas: {{ ref_list(e.related_tasks) }}</p>{% endif %}
+      {% if e.related_decisions %}<p>Decisões relacionadas: {{ ref_list(e.related_decisions) }}</p>{% endif %}
+    {% endif %}
+    {{ source_link(e.source) }}
+  </li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endmacro %}

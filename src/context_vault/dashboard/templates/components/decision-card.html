@@ -1,0 +1,16 @@
+{% from "components/status-badge.html" import badge with context %}
+{% from "components/source-link.html" import source_link, ref_link, ref_list with context %}
+{% macro decision_card(d) %}
+<article class="card" data-cv-item data-decision-id="{{ d.id }}">
+  <div class="row"><h3>{% if d.adr_number %}ADR {{ d.adr_number }} · {% endif %}<a href="{{ href(d.source.path) }}">{{ d.title }}</a></h3>{{ badge(d.status, d.status_label) }}</div>
+  {% if d.decision %}<p>{{ d.decision }}</p>{% else %}<p class="muted">Texto da decisão não registrado.</p>{% endif %}
+  <dl>
+    <dt>Data</dt><dd>{{ d.decision_date or "Não informado" }}</dd>
+    {% if d.superseded_by %}<dt>Substituída por</dt><dd>{{ ref_link(d.superseded_by) }}</dd>{% endif %}
+    {% if d.supersedes %}<dt>Substitui</dt><dd>{{ ref_list(d.supersedes) }}</dd>{% endif %}
+    {% if d.related %}<dt>Relacionada a</dt><dd>{{ ref_list(d.related) }}</dd>{% endif %}
+  </dl>
+  {% if d.rationale_missing %}<p class="muted">Justificativa não registrada.</p>{% endif %}
+  {{ source_link(d.source) }}
+</article>
+{% endmacro %}

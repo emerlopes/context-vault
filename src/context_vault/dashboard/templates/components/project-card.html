@@ -1,0 +1,36 @@
+{% from "components/status-badge.html" import badge with context %}
+{% from "components/source-link.html" import source_link, ref_link, ref_list with context %}
+{% macro progress_bar(p) %}
+<div class="progress">
+  {% if p.percent is not none %}
+  <div class="bar" role="img" aria-label="{{ p.label }}"><span style="width: {{ p.percent }}%"></span></div>
+  {% endif %}
+  <div class="label">{{ p.label }}</div>
+</div>
+{% endmacro %}
+
+{% macro project_card(p) %}
+<article class="card" data-cv-item data-project-id="{{ p.id }}">
+  <div class="row"><h3><a href="{{ href(p.source.path) }}">{{ p.title }}</a></h3>{{ badge(p.status, p.status_label) }}</div>
+  {% if p.description %}<p class="muted">{{ p.description }}</p>{% endif %}
+  <dl>
+    <dt>Responsável</dt><dd>{{ p.owner_label }}</dd>
+    <dt>Participantes</dt><dd>{% if p.members %}{{ p.members|join(", ") }}{% else %}<span class="muted">Não informado</span>{% endif %}</dd>
+    <dt>Prazo</dt><dd>{{ p.target_label }}</dd>
+    <dt>Pendências</dt><dd>{{ p.open_tasks }} aberta(s){% if p.overdue_tasks %} · {{ badge("overdue", p.overdue_tasks ~ " atrasada(s)") }}{% endif %}</dd>
+    {% if p.next_milestones %}<dt>Próxima entrega</dt><dd>{{ p.next_milestones[0].kind_label }}: {{ p.next_milestones[0].title }} — {{ p.next_milestones[0].due_label }}</dd>{% endif %}
+  </dl>
+  {{ progress_bar(p.progress) }}
+  {% if p.open_blockers %}
+  <p><strong>Bloqueios em aberto</strong></p>
+  <ul>{% for b in p.open_blockers %}<li>{{ b.description }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if p.risks %}
+  <details><summary>Riscos registrados ({{ p.risks|length }})</summary><ul>{% for r in p.risks %}<li>{{ r }}</li>{% endfor %}</ul></details>
+  {% endif %}
+  {% if p.decisions %}
+  <details><summary>Decisões ({{ p.decisions|length }})</summary><p>{{ ref_list(p.decisions) }}</p></details>
+  {% endif %}
+  {{ source_link(p.source) }}
+</article>
+{% endmacro %}

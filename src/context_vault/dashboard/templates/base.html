@@ -1,0 +1,82 @@
+<!doctype html>
+{% from "components/metric-card.html" import metric_card with context %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/icon.html" import icon with context %}
+<html lang="pt-BR" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="{{ csp }}">
+<meta name="referrer" content="no-referrer">
+<meta name="generator" content="ContextVault Dashboard {{ d.schema_version }}">
+<meta name="cv-view" content="{{ d.view.value }}">
+<title>{{ d.title }} — ContextVault</title>
+{% if external %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="{{ fonts_url }}">
+{% endif %}
+<style>{{ css|safe }}</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+<header class="top">
+  <div class="brand"><span class="logo">{{ icon("vault", 18) }}</span><span>ContextVault · {{ VIEW_TITLES[d.view.value] }}</span></div>
+  <div class="heading">
+    <h1>{{ d.title }}</h1>
+    {% if d.subtitle %}<p class="subtitle">{{ d.subtitle }}</p>{% endif %}
+  </div>
+  <div class="meta">
+    <p>{{ icon("clock", 14) }} Gerado em: <time datetime="{{ d.generated_at }}" data-generated-at>{{ d.generated_label }}</time></p>
+    <p>Dados locais · {{ d.timezone }}</p>
+  </div>
+  <div class="tools">
+    <div class="search">
+      {{ icon("search", 18) }}
+      <label for="cv-search" class="sr-only">Buscar neste relatório</label>
+      <input id="cv-search" type="search" placeholder="Buscar neste relatório…" autocomplete="off" data-cv-search>
+    </div>
+    <button type="button" class="theme" data-cv-theme aria-label="Tema: automático (alternar)">{{ icon("contrast", 18) }}<span data-cv-theme-label>Tema: automático</span></button>
+    <p class="sr-only" aria-live="polite" data-cv-search-status></p>
+  </div>
+</header>
+<nav class="sections" aria-label="Seções do relatório"></nav>
+<main id="main">
+  {% if d.filters_label %}
+  <ul class="chips" aria-label="Filtros aplicados">{% for f in d.filters_label %}<li>{{ f }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if d.warnings %}
+  <section class="block" id="avisos" aria-labelledby="avisos-h">
+    <div class="section-header"><h2 id="avisos-h">Avisos</h2><span class="count">({{ d.warnings|length }})</span>
+      <p class="hint">Problemas detectados nos registros. Nada foi corrigido automaticamente; os indicadores afetados aparecem como "Sem dados".</p></div>
+    {% for w in d.warnings %}
+    <div class="notice sev-{{ w.severity }}" data-cv-item data-warning="{{ w.code }}"><p class="code">{{ icon("alert" if w.severity != "info" else "info", 14) }} {{ w.code }}</p><p>{{ w.message }}</p>
+      {% if w.paths %}<p class="src">Arquivos: {% for p in w.paths %}<a href="{{ href(p) }}">{{ p }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+  <section class="block" id="indicadores" aria-labelledby="indicadores-h">
+    <h2 id="indicadores-h" class="sr-only">Indicadores</h2>
+    <div class="metrics">{% for c in d.metric_cards %}{{ metric_card(c) }}{% endfor %}</div>
+  </section>
+  {% block content %}{% endblock %}
+  <section class="block" id="fontes" aria-labelledby="fontes-h">
+    <div class="section-header"><h2 id="fontes-h">Fontes</h2><span class="count">({{ d.sources|length }})</span>
+      <p class="hint">{{ d.records_read }} registro(s) lido(s) do repositório local. Os arquivos abaixo são a fonte canônica; este HTML é uma representação derivada.</p></div>
+    {% if d.sources %}
+    <details><summary>{{ icon("file", 16) }} Mostrar arquivos de origem</summary>
+      <ul class="list plain">{% for s in d.sources %}<li data-cv-item><a href="{{ href(s.path) }}">{{ s.path }}</a>{% if s.record_id %} <span class="mono">{{ s.record_id }}</span>{% endif %}</li>{% endfor %}</ul>
+    </details>
+    {% else %}<p class="muted">Nenhum registro foi usado neste relatório.</p>{% endif %}
+  </section>
+</main>
+<footer>
+  <p>Gerado pelo ContextVault · Fonte: repositório local · Relatório somente leitura</p>
+  <p>Retrato dos dados em {{ d.generated_label }}: alterações posteriores só aparecem ao regenerar (<span class="mono">context-vault dashboard refresh</span>).</p>
+</footer>
+<script type="application/json" id="{{ manifest_id }}">{{ manifest|tojson }}</script>
+{% if external %}<script src="{{ lucide_url }}" integrity="{{ lucide_sri }}" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+{% endif %}<script>{{ js|safe }}</script>
+</body>
+</html>

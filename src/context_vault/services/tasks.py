@@ -422,7 +422,14 @@ def complete_task(vault: Vault, ref: str, *, reason: str | None = None, request_
 # ---------------------------------------------------------------- queries
 
 
-def _matches_person(task: Task, person_id: str | None, names: list[str]) -> bool:
+def is_overdue(task: Task, today: date) -> bool:
+    """Open task whose due date (a local calendar day) is before `today`. Completed, cancelled and
+    tasks without a due date are never overdue."""
+    return bool(task.due_date and task.due_date < today and task.status in OPEN_STATUSES)
+
+
+def matches_person(task: Task, person_id: str | None, names: list[str]) -> bool:
+    """Task assigned to the person (by ID, or by recorded name / first name when not linked)."""
     if person_id and task.assignee_id == person_id:
         return True
     if not task.assignee_name:
@@ -523,7 +530,7 @@ def list_tasks(vault: Vault, *, statuses: list[str] | None = None, include_all: 
     for task in tasks:
         if wanted is not None and task.status not in wanted:
             continue
-        if assignee and not _matches_person(task, person_id, names):
+        if assignee and not matches_person(task, person_id, names):
             continue
         via = None
         if related_id:
@@ -536,8 +543,8 @@ def list_tasks(vault: Vault, *, statuses: list[str] | None = None, include_all: 
                     continue
         if meeting_id and task.source_meeting_id != meeting_id:
             continue
-        is_overdue = bool(task.due_date and task.due_date < today and task.status in OPEN_STATUSES)
-        if overdue and not is_overdue:
+        overdue_now = is_overdue(task, today)
+        if overdue and not overdue_now:
             continue
         if window and not (task.due_date and window[0] <= task.due_date <= window[1]):
             continue
@@ -545,8 +552,8 @@ def list_tasks(vault: Vault, *, statuses: list[str] | None = None, include_all: 
                 [task.title, task.description or "", task.assignee_name or "", *(n.text for n in task.notes)])):
             continue
         item = task.model_dump(mode="json")
-        item["overdue"] = is_overdue
-        if is_overdue:
+        item["overdue"] = overdue_now
+        if overdue_now:
             item["days_overdue"] = (today - task.due_date).days  # type: ignore[operator]
         item["related"] = [_note_brief(catalog, tasks, r) for r in task.related_ids]
         if task.source_meeting_id:

@@ -1,0 +1,18 @@
+{% from "components/source-link.html" import source_link, ref_link with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% macro attention_list(items) %}
+{% if not items %}
+{{ empty("Nada precisa de atenção agora.", "Não há tarefas atrasadas, bloqueios, decisões pendentes ou compromissos próximos registrados.") }}
+{% else %}
+<ol class="list">
+{% for i in items %}
+  <li class="attention-item" data-cv-item data-attention-key="{{ i.key }}">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">{{ i.weight }}</span>
+    <div><strong>{{ ref_link(i.record) if not i.record.missing else i.title }}</strong> <span class="tag">{{ {"task": "Tarefa", "project": "Projeto", "appointment": "Compromisso", "architecture_decision": "Decisão", "issue": "Inconsistência"}.get(i.record_type, "Registro") }}</span></div>
+    <ul aria-label="Motivo">{% for r in i.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+    <div style="grid-column: 2">{{ source_link(i.source) }}</div>
+  </li>
+{% endfor %}
+</ol>
+{% endif %}
+{% endmacro %}

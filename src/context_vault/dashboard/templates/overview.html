@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/attention-list.html" import attention_list with context %}
+{% from "components/project-card.html" import project_card with context %}
+{% from "components/task-table.html" import task_table with context %}
+{% from "components/event-list.html" import event_list with context %}
+{% from "components/person-card.html" import person_card with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% from "components/source-link.html" import source_link, ref_link with context %}
+{% block content %}
+<section class="block" id="atencao">
+  {{ section_header("O que precisa de atenção", data.attention|length, "Tarefas atrasadas, bloqueios, decisões pendentes e compromissos próximos, ordenados por regras configuradas.") }}
+  {{ attention_list(data.attention) }}
+</section>
+<section class="block" id="projetos">
+  {{ section_header("Projetos ativos", data.projects|length) }}
+  {% if data.projects %}<div class="grid">{% for p in data.projects %}{{ project_card(p) }}{% endfor %}</div>
+  {% else %}{{ empty("Nenhum projeto registrado.", "Os projetos aparecerão aqui quando forem adicionados ao ContextVault.") }}{% endif %}
+</section>
+<section class="block" id="pendencias">
+  {{ section_header("Pendências abertas", data.tasks|length, "Até 25, com prazo mais próximo primeiro." if data.tasks|length >= 25 else none) }}
+  {{ task_table(data.tasks, "overview-tasks", tools=false, empty_title="Nenhuma tarefa aberta.") }}
+</section>
+<section class="block" id="agenda">
+  {{ section_header("Próximos compromissos", data.events|length) }}
+  {{ event_list(data.events) }}
+</section>
+<section class="block" id="atividade">
+  {{ section_header("Atividades recentes", data.activity|length, "Alterações registradas no diário do ContextVault no período.") }}
+  {% if data.activity %}
+  <ul class="list">{% for a in data.activity %}<li data-cv-item><strong>{{ a.operation_label }}</strong> — {% if a.target %}{{ ref_link(a.target) }}{% endif %}{% if a.summary %} <span class="muted">· {{ a.summary }}</span>{% endif %}<div class="src">{{ a.at_label }}</div></li>{% endfor %}</ul>
+  {% else %}{{ empty("Nenhuma alteração registrada no período.") }}{% endif %}
+</section>
+<section class="block" id="pessoas">
+  {{ section_header("Pessoas e responsabilidades", data.people|length) }}
+  {% if data.people %}<div class="grid">{% for p in data.people %}{{ person_card(p) }}{% endfor %}</div>
+  {% else %}{{ empty("Nenhuma pessoa com atribuições registradas.") }}{% endif %}
+</section>
+<section class="block" id="conhecimento">
+  {{ section_header("Conhecimento", data.knowledge|length, "Assuntos atualizados mais recentemente.") }}
+  {% if data.knowledge %}
+  <div class="grid">{% for k in data.knowledge %}
+    <article class="card" data-cv-item><div class="row"><h3><a href="{{ href(k.source.path) }}">{{ k.title }}</a></h3><span class="tag">{{ k.type_label }}</span></div>
+      {% if k.description %}<p class="muted">{{ k.description }}</p>{% endif %}<p class="src">Atualizado em {{ k.updated_label }}</p></article>
+  {% endfor %}</div>
+  {% else %}{{ empty("Nenhum conhecimento registrado.") }}{% endif %}
+</section>
+{% endblock %}

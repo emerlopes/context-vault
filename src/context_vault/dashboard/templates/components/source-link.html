@@ -1,0 +1,14 @@
+{# Traceability: every item links to the canonical file it came from (relative link, works offline). #}
+{% macro source_link(src) %}
+{% if src and src.path %}
+<p class="src">Fonte: <a href="{{ href(src.path) }}" rel="noopener">{{ src.path }}</a>{% if src.record_id %} <span class="mono">· {{ src.record_id }}</span>{% endif %}</p>
+{% endif %}
+{% endmacro %}
+
+{% macro ref_link(ref) %}
+{% if ref.missing %}<span class="badge tone-danger"><span aria-hidden="true">!</span>Registro inexistente</span> <span class="mono">{{ ref.id }}</span>{% elif ref.path %}<a href="{{ href(ref.path) }}">{{ ref.title or ref.id }}</a>{% else %}{{ ref.title or ref.id }}{% endif %}
+{% endmacro %}
+
+{% macro ref_list(refs, empty="Não informado") %}
+{% if refs %}{% for r in refs %}{{ ref_link(r) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span class="muted">{{ empty }}</span>{% endif %}
+{% endmacro %}

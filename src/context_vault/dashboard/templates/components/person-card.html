@@ -1,0 +1,20 @@
+{% from "components/status-badge.html" import badge with context %}
+{% from "components/source-link.html" import source_link, ref_link, ref_list with context %}
+{% macro person_card(p) %}
+<article class="card" data-cv-item data-person-id="{{ p.id }}">
+  <div class="row"><h3><a href="{{ href(p.source.path) }}">{{ p.name }}</a></h3>{% if p.provisional %}{{ badge("provisional", "Cadastro provisório") }}{% endif %}</div>
+  {% if p.role %}<p class="muted">{{ p.role }}</p>{% endif %}
+  <dl>
+    <dt>Equipe</dt><dd>{{ ref_list(p.teams) }}</dd>
+    <dt>Projetos atuais</dt><dd>{% if p.current_projects %}{% for x in p.current_projects %}{{ ref_link(x.target) }}{% if x.role %} — {{ x.role }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}{% else %}<span class="muted">Nenhum registrado</span>{% endif %}</dd>
+    <dt>Tarefas</dt><dd>{{ p.open_tasks }} aberta(s){% if p.overdue_tasks %} · {{ badge("overdue", p.overdue_tasks ~ " atrasada(s)") }}{% endif %} · {{ p.completed_tasks }} concluída(s)</dd>
+  </dl>
+  {% if p.responsibilities %}<details><summary>Responsabilidades ({{ p.responsibilities|length }})</summary><ul>{% for r in p.responsibilities %}<li>{{ r }}</li>{% endfor %}</ul></details>{% endif %}
+  {% if p.past_projects %}
+  <details class="past"><summary>Participações anteriores ({{ p.past_projects|length }})</summary>
+    <ul>{% for x in p.past_projects %}<li>{{ ref_link(x.target) }}{% if x.role %} — {{ x.role }}{% endif %} <span class="muted">({{ x.period_label }})</span></li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+  {{ source_link(p.source) }}
+</article>
+{% endmacro %}

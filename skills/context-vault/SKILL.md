@@ -7,7 +7,8 @@ description: >-
   "lembra que", "o que sabemos sobre...", "quem é responsável por...", "por que
   decidimos..."), to manage meetings ("estou na reunião", "me prepara para a
   reunião"), agenda ("marca", "o que tenho amanhã") or tasks ("pendências do João",
-  "concluí a tarefa"). All reads and writes go through the context-vault CLI.
+  "concluí a tarefa") or visual dashboards ("resumo visual", "monte um painel",
+  "o que precisa da minha atenção?"). All reads and writes go through the context-vault CLI.
 ---
 
 # ContextVault
@@ -72,6 +73,7 @@ mantenha a informação na conversa e não simule comandos, commits nem resultad
 | "O que ficou sem classificar?" | `inbox list` → `inbox classify` |
 | "O que falta esclarecer sobre X?" | `gaps list <ref>` |
 | "O que mudou em X (nesta semana)?" | `context X --since "esta semana"`; `read <id> --history`, `journal list --period` |
+| Resumo **visual** / painel / HTML ("monte um dashboard", "mostre visualmente", "o que precisa da minha atenção?") | `dashboard build --view <visão> --json`, `dashboard refresh` ([dashboard](references/dashboard.md)) |
 
 Convenções de entrada/saída, tipos de nota, seções e códigos de erro: [conventions](references/conventions.md).
 

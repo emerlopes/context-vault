@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; img-src data:; style-src &#39;unsafe-inline&#39; https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src &#39;sha256-lMLNhFWUTK/HC2M3/6w4M+kl86aH7nTzZCObAtCJXsQ=&#39; https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js; base-uri &#39;none&#39;; form-action &#39;none&#39;">
+<meta name="referrer" content="no-referrer">
+<meta name="generator" content="ContextVault Dashboard 1.0">
+<meta name="cv-view" content="attention">
+<title>O que precisa de atenção — ContextVault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600&amp;family=Fira+Sans:wght@400;500;600&amp;display=swap">
+<style>/* ContextVault Dashboard — inlined into every report. Remote fonts are linked in the <head> (no CSS imports).
+ * Design system (ui-ux-pro-max): "Data-Dense Dashboard" — blue data + amber highlights, Fira Sans / Fira Code
+ * (Google Fonts with `external_assets`, system fonts as fallback), WCAG AA contrast, 44px touch targets, 150–300ms
+ * transitions, prefers-reduced-motion respected. */
+:root {
+  /* palette — light */
+  --bg: #F8FAFC;           /* slate-50 */
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F9;    /* slate-100 */
+  --row-hover: #EFF6FF;    /* blue-50 */
+  --border: #E2E8F0;       /* slate-200: visible in light mode */
+  --border-strong: #CBD5E1;
+  --text: #0F172A;         /* slate-900 */
+  --heading: #1E3A8A;      /* blue-900 */
+  --muted: #475569;        /* slate-600 — minimum for secondary text (7:1 on white) */
+  --primary: #1E40AF;      /* blue-800 — links, active states (8.6:1 on white) */
+  --secondary: #3B82F6;    /* blue-500 — bars, focus ring */
+  --primary-soft: #DBEAFE;
+  --highlight: #F59E0B;    /* amber-500 — accents only, never text on white */
+  --good: #166534;  --good-soft: #DCFCE7;
+  --warn: #92400E;  --warn-soft: #FEF3C7;
+  --danger: #B91C1C; --danger-soft: #FEE2E2;
+  --info: #1E40AF;  --info-soft: #DBEAFE;
+  --focus: #3B82F6;
+  --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .04);
+  --shadow-hover: 0 4px 12px rgba(15, 23, 42, .08);
+  /* type */
+  --font: "Fira Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* layout */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --container: 1280px;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --touch: 44px;
+  --z-sticky: 20;
+  --z-skip: 50;
+  --ease: 200ms ease;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0B1120; --surface: #111827; --surface-2: #1E293B; --row-hover: #172554; --border: #334155;
+  --border-strong: #475569; --text: #F1F5F9; --heading: #BFDBFE; --muted: #A3B1C6; --primary: #93C5FD;
+  --secondary: #60A5FA; --primary-soft: #1E3A8A; --highlight: #FBBF24; --good: #86EFAC; --good-soft: #14532D;
+  --warn: #FCD34D; --warn-soft: #422006; --danger: #FCA5A5; --danger-soft: #450A0A; --info: #93C5FD;
+  --info-soft: #1E3A8A; --focus: #60A5FA; --shadow: none; --shadow-hover: 0 0 0 1px var(--border-strong);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg: #0B1120; --surface: #111827; --surface-2: #1E293B; --row-hover: #172554; --border: #334155;
+    --border-strong: #475569; --text: #F1F5F9; --heading: #BFDBFE; --muted: #A3B1C6; --primary: #93C5FD;
+    --secondary: #60A5FA; --primary-soft: #1E3A8A; --highlight: #FBBF24; --good: #86EFAC; --good-soft: #14532D;
+    --warn: #FCD34D; --warn-soft: #422006; --danger: #FCA5A5; --danger-soft: #450A0A; --info: #93C5FD;
+    --info-soft: #1E3A8A; --focus: #60A5FA; --shadow: none; --shadow-hover: 0 0 0 1px var(--border-strong);
+    color-scheme: dark;
+  }
+}
+
+/* ------------------------------------------------------------- base */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--font); }
+a { color: var(--primary); text-underline-offset: 2px; transition: color var(--ease); }
+a:hover { color: var(--secondary); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3 { color: var(--heading); line-height: 1.25; margin: 0; font-weight: 600; }
+h1 { font-size: 1.75rem; letter-spacing: -.01em; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1.02rem; }
+p { margin: .25rem 0; }
+ul, ol { margin: .25rem 0; padding-left: 1.25rem; }
+.icon { flex: none; vertical-align: -.15em; }
+.icon-slot { display: inline-flex; flex: none; font-style: normal; line-height: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip {
+  position: absolute; left: -999px; top: .5rem; z-index: var(--z-skip); background: var(--surface); color: var(--primary);
+  padding: .75rem 1rem; border-radius: var(--radius-sm); box-shadow: var(--shadow-hover);
+}
+.skip:focus { left: 1rem; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); font-size: .82em; overflow-wrap: anywhere; }
+[hidden], .cv-hide-search, .cv-hide-filter { display: none !important; }
+
+/* ------------------------------------------------------------- controls (44px touch targets) */
+button, select, input[type="search"] {
+  font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); min-height: var(--touch); padding: .5rem .85rem;
+  transition: border-color var(--ease), background-color var(--ease), box-shadow var(--ease), color var(--ease);
+}
+button, select, summary, label.check, [data-cv-sort] { cursor: pointer; }
+button { display: inline-flex; align-items: center; gap: .45rem; font-weight: 500; }
+button:hover, select:hover { border-color: var(--secondary); background: var(--surface-2); }
+input[type="search"]:hover { border-color: var(--secondary); }
+input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: var(--primary); cursor: pointer; margin: 0; }
+
+/* ------------------------------------------------------------- header / nav / footer */
+.top {
+  display: grid; grid-template-columns: 1fr auto; gap: .75rem 1.5rem; align-items: end;
+  padding: 1.25rem var(--gutter) 1rem; background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.brand {
+  grid-column: 1 / -1; display: inline-flex; align-items: center; gap: .5rem; font-weight: 600; color: var(--muted);
+  font-size: .9rem; letter-spacing: .02em;
+}
+.logo { display: inline-flex; color: var(--primary); }
+.subtitle { color: var(--muted); }
+.meta { text-align: right; color: var(--muted); font-size: .875rem; }
+.tools { grid-column: 1 / -1; display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.search { position: relative; flex: 1 1 18rem; min-width: 0; display: flex; align-items: center; }
+.search > .icon-slot, .search > .icon {
+  position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none;
+}
+.search input { width: 100%; padding-left: 2.5rem; background: var(--bg); }
+nav.sections {
+  position: sticky; top: 0; z-index: var(--z-sticky); display: flex; gap: .25rem; overflow-x: auto;
+  padding: .25rem var(--gutter); background: var(--surface); border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+}
+nav.sections:empty { display: none; }
+nav.sections a {
+  display: inline-flex; align-items: center; min-height: var(--touch); white-space: nowrap; text-decoration: none;
+  color: var(--muted); padding: 0 .75rem; border-radius: var(--radius-sm); font-size: .925rem; font-weight: 500;
+  transition: background-color var(--ease), color var(--ease);
+}
+nav.sections a:hover { background: var(--primary-soft); color: var(--primary); }
+main { max-width: var(--container); margin: 0 auto; padding: 1.5rem var(--gutter) 2rem; }
+footer {
+  max-width: var(--container); margin: 0 auto; padding: 1rem var(--gutter) 2rem; color: var(--muted);
+  font-size: .875rem; border-top: 1px solid var(--border);
+}
+footer p { margin: .15rem 0; max-width: 75ch; }
+
+/* ------------------------------------------------------------- sections and cards */
+section.block { margin: 0 0 2rem; scroll-margin-top: 4rem; }
+.section-header { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.section-header .count { color: var(--muted); font-size: .9rem; font-family: var(--mono); }
+.section-header .hint { color: var(--muted); font-size: .9rem; flex-basis: 100%; max-width: 75ch; }
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.25rem; padding: 0; list-style: none; }
+.chips li {
+  background: var(--primary-soft); color: var(--primary); padding: .25rem .75rem; border-radius: 999px;
+  font-size: .875rem; font-weight: 500;
+}
+.grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); }
+.grid.wide { grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); }
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem;
+  box-shadow: var(--shadow); min-width: 0; overflow-wrap: anywhere;
+  transition: box-shadow var(--ease), border-color var(--ease);
+}
+.card:hover { box-shadow: var(--shadow-hover); border-color: var(--border-strong); }  /* no layout shift */
+.card h3 { margin-bottom: .35rem; }
+.card h3 a { text-decoration: none; color: inherit; }
+.card h3 a:hover { color: var(--primary); text-decoration: underline; }
+.card .row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.card p.muted { max-width: 75ch; }
+.card dl { display: grid; grid-template-columns: auto 1fr; gap: .25rem .85rem; margin: .5rem 0; font-size: .925rem; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; }
+
+/* ------------------------------------------------------------- KPI cards */
+.metrics { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); margin-bottom: 2rem; }
+.metric {
+  background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--border-strong);
+  border-radius: var(--radius); padding: .85rem 1rem; box-shadow: var(--shadow);
+}
+.metric .value { font: 600 1.85rem/1.1 var(--mono); color: var(--heading); font-variant-numeric: tabular-nums; }
+.metric .label { color: var(--muted); font-size: .9rem; font-weight: 500; margin-top: .2rem; }
+.metric .hint { color: var(--muted); font-size: .8rem; }
+.metric.tone-danger { border-top-color: var(--danger); }
+.metric.tone-danger .value { color: var(--danger); }
+.metric.tone-good { border-top-color: var(--good); }
+.metric.tone-warning { border-top-color: var(--highlight); }
+.metric .nodata { font: 500 1rem/1.6 var(--font); color: var(--muted); }
+
+/* ------------------------------------------------------------- badges: icon + text, never color alone */
+.badge {
+  display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; border-radius: 999px;
+  font-size: .8rem; font-weight: 600; line-height: 1.4; white-space: nowrap;
+  background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
+}
+.badge.tone-good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+.badge.tone-warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.badge.tone-danger { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+.badge.tone-info { background: var(--info-soft); color: var(--info); border-color: transparent; }
+
+/* ------------------------------------------------------------- tables (data-dense) */
+.table-tools {
+  display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; margin-bottom: .75rem; font-size: .925rem;
+}
+.table-tools label.field { display: inline-flex; align-items: center; gap: .5rem; color: var(--muted); font-weight: 500; }
+.table-tools label.check {
+  display: inline-flex; align-items: center; gap: .5rem; min-height: var(--touch); padding: 0 .35rem;
+  border-radius: var(--radius-sm); transition: background-color var(--ease);
+}
+.table-tools label.check:hover { background: var(--surface-2); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+th, td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+thead th {
+  position: sticky; top: 0; background: var(--surface-2); font-weight: 600; white-space: nowrap; color: var(--heading);
+  font-size: .875rem; padding-top: 0; padding-bottom: 0;
+}
+th [data-cv-sort] {
+  all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: .3rem;
+  min-height: var(--touch); border-radius: 4px; transition: color var(--ease);
+}
+th [data-cv-sort]:hover { color: var(--primary); }
+th [data-cv-sort]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+th .sort-asc, th .sort-desc { display: none; }
+th .sort-none { color: var(--muted); }
+th[aria-sort="ascending"] .sort-none, th[aria-sort="descending"] .sort-none { display: none; }
+th[aria-sort="ascending"] .sort-asc, th[aria-sort="descending"] .sort-desc { display: inline; color: var(--primary); }
+tbody tr { transition: background-color var(--ease); }
+tbody tr:hover { background: var(--row-hover); }
+tbody tr:last-child td { border-bottom: 0; }
+tr.is-overdue td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
+td .sub { color: var(--muted); font-size: .85rem; }
+.table-count { color: var(--muted); font-size: .875rem; margin-top: .5rem; }
+
+/* ------------------------------------------------------------- lists, progress, notices */
+.list { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+.list > li {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem .9rem;
+  overflow-wrap: anywhere; transition: border-color var(--ease);
+}
+.list > li:hover { border-color: var(--border-strong); }
+.list.plain > li { background: transparent; border: 0; padding: .15rem 0; }
+.attention-item { display: grid; grid-template-columns: auto 1fr; gap: .25rem .85rem; }
+.attention-item .weight {
+  font: 600 .95rem/1.6 var(--mono); color: var(--danger); min-width: 2.75rem; text-align: center;
+  background: var(--danger-soft); border-radius: var(--radius-sm); align-self: start;
+}
+.attention-item ul { grid-column: 2; margin: .2rem 0 0; color: var(--muted); font-size: .925rem; }
+.progress { margin: .5rem 0; }
+.progress .bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+.progress .bar span { display: block; height: 100%; background: var(--secondary); }
+.progress .label { font-size: .85rem; color: var(--muted); }
+.notice {
+  border-radius: var(--radius); padding: .75rem .9rem; margin: 0 0 .5rem; border: 1px solid var(--border);
+  background: var(--surface);
+}
+.notice.sev-warning { border-left: 4px solid var(--highlight); }
+.notice.sev-error { border-left: 4px solid var(--danger); }
+.notice .code { font-family: var(--mono); font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: .35rem; }
+.notice p { max-width: 75ch; }
+.empty {
+  text-align: center; padding: 1.75rem 1rem; color: var(--muted); background: var(--surface);
+  border: 1px dashed var(--border-strong); border-radius: var(--radius);
+}
+.empty strong { display: block; color: var(--text); margin-bottom: .25rem; }
+.src { font-size: .82rem; color: var(--muted); }
+.src a { color: var(--muted); }
+.src a:hover { color: var(--primary); }
+details > summary {
+  display: flex; align-items: center; gap: .4rem; min-height: var(--touch); color: var(--muted); font-size: .925rem;
+  font-weight: 500; border-radius: var(--radius-sm); transition: color var(--ease); list-style-position: inside;
+}
+details > summary:hover { color: var(--primary); }
+details[open] > summary { margin-bottom: .25rem; }
+.two-cols { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
+.past { opacity: .9; }
+.tag { font-size: .8rem; color: var(--muted); font-weight: 500; }
+
+/* ------------------------------------------------------------- responsive: 375 / 768 / 1024 / 1440 */
+@media (max-width: 768px) {
+  .top { grid-template-columns: 1fr; }
+  .meta { text-align: left; }
+  h1 { font-size: 1.45rem; }
+  .metric .value { font-size: 1.55rem; }
+}
+@media (max-width: 640px) {
+  table.responsive thead { display: none; }
+  table.responsive, table.responsive tbody, table.responsive tr, table.responsive td { display: block; width: 100%; }
+  table.responsive tr { border-bottom: 1px solid var(--border); padding: .5rem 0; }
+  table.responsive td { border: 0; padding: .25rem .9rem; }
+  table.responsive td::before { content: attr(data-label) ": "; color: var(--muted); font-size: .85rem; font-weight: 500; }
+  table.responsive td:first-child::before { content: none; }
+  .table-tools label.field { flex: 1 1 100%; justify-content: space-between; }
+  .table-tools select { flex: 1; }
+}
+@media (min-width: 1440px) {
+  :root { --container: 1360px; }
+}
+
+/* ------------------------------------------------------------- motion and print */
+html:not(.cv-ready) *, html:not(.cv-ready) *::before { transition: none !important; }  /* no flash on first paint */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+}
+@media print {
+  nav.sections, .tools, .table-tools { display: none; }
+  body { background: #fff; color: #000; }
+  .card, .metric, .table-wrap, .list > li { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+<header class="top">
+  <div class="brand"><span class="logo"><i class="icon-slot" data-lucide="vault" data-icon-class="icon" data-size="18" aria-hidden="true"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V7"/><path d="M12 17v-2"/><path d="M15 12h2"/><path d="M7 12h2"/></svg></i></span><span>ContextVault · O que precisa de atenção</span></div>
+  <div class="heading">
+    <h1>O que precisa de atenção</h1>
+  </div>
+  <div class="meta">
+    <p><i class="icon-slot" data-lucide="clock" data-icon-class="icon" data-size="14" aria-hidden="true"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i> Gerado em: <time datetime="2026-10-20T09:00:00-03:00" data-generated-at>20/10/2026 às 09h</time></p>
+    <p>Dados locais · America/Sao_Paulo</p>
+  </div>
+  <div class="tools">
+    <div class="search">
+      <i class="icon-slot" data-lucide="search" data-icon-class="icon" data-size="18" aria-hidden="true"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></i>
+      <label for="cv-search" class="sr-only">Buscar neste relatório</label>
+      <input id="cv-search" type="search" placeholder="Buscar neste relatório…" autocomplete="off" data-cv-search>
+    </div>
+    <button type="button" class="theme" data-cv-theme aria-label="Tema: automático (alternar)"><i class="icon-slot" data-lucide="contrast" data-icon-class="icon" data-size="18" aria-hidden="true"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/></svg></i><span data-cv-theme-label>Tema: automático</span></button>
+    <p class="sr-only" aria-live="polite" data-cv-search-status></p>
+  </div>
+</header>
+<nav class="sections" aria-label="Seções do relatório"></nav>
+<main id="main">
+  <section class="block" id="indicadores" aria-labelledby="indicadores-h">
+    <h2 id="indicadores-h" class="sr-only">Indicadores</h2>
+    <div class="metrics"><div class="metric tone-danger" data-metric="attention_items">
+  <div class="value">8</div>
+  <div class="label">Itens de atenção</div>
+</div>
+<div class="metric tone-danger" data-metric="overdue_task">
+  <div class="value">1</div>
+  <div class="label">Tarefas atrasadas</div>
+</div>
+<div class="metric tone-danger" data-metric="blocked">
+  <div class="value">2</div>
+  <div class="label">Bloqueios</div>
+</div>
+<div class="metric tone-neutral" data-metric="pending_decision">
+  <div class="value">1</div>
+  <div class="label">Decisões aguardando</div>
+</div>
+<div class="metric tone-neutral" data-metric="upcoming_meeting">
+  <div class="value">2</div>
+  <div class="label">Compromissos próximos</div>
+</div>
+<div class="metric tone-neutral" data-metric="unassigned_task">
+  <div class="value">1</div>
+  <div class="label">Sem responsável</div>
+</div>
+<div class="metric tone-neutral" data-metric="inconsistency">
+  <div class="value">0</div>
+  <div class="label">Inconsistências</div>
+</div>
+</div>
+  </section>
+<section class="block" id="atencao">
+  <div class="section-header">
+  <h2>Itens que precisam de atenção</h2>
+<span class="count">(8)</span><p class="hint">Ordenados por pesos configurados em config.yaml (dashboard.attention). Os pesos ordenam a lista; não são probabilidades.</p></div>
+
+  <ol class="list">
+  <li class="attention-item" data-cv-item data-attention-key="01a15b12-b87f-730c-83db-2ab82ad61247">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">100</span>
+    <div><strong><a href="../pendencias/tarefas.yaml">Validar integração Orion</a></strong> <span class="tag">Tarefa</span></div>
+    <ul aria-label="Motivo"><li>Tarefa aberta</li><li>Prazo vencido há 3 dias (17/10/2026)</li><li>Projeto Orion ativo</li></ul>
+    <div style="grid-column: 2"><p class="src">Fonte: <a href="../pendencias/tarefas.yaml" rel="noopener">pendencias/tarefas.yaml</a> <span class="mono">· 01a15b12-b87f-730c-83db-2ab82ad61247</span></p>
+</div>
+  </li>
+  <li class="attention-item" data-cv-item data-attention-key="01a15b12-b38f-7288-8311-773c638f772f">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">90</span>
+    <div><strong><a href="../projetos/atlas.md">Atlas</a></strong> <span class="tag">Projeto</span></div>
+    <ul aria-label="Motivo"><li>Projeto ativo</li><li>Bloqueio em aberto: Ambiente de homologação indisponível</li></ul>
+    <div style="grid-column: 2"><p class="src">Fonte: <a href="../projetos/atlas.md" rel="noopener">projetos/atlas.md</a> <span class="mono">· 01a15b12-b38f-7288-8311-773c638f772f</span></p>
+</div>
+  </li>
+  <li class="attention-item" data-cv-item data-attention-key="01a15b12-ba66-70a0-b099-218776be93be">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">85</span>
+    <div><strong><a href="../pendencias/tarefas.yaml">Subir ambiente Atlas</a></strong> <span class="tag">Tarefa</span></div>
+    <ul aria-label="Motivo"><li>Tarefa bloqueada</li><li>Projeto Atlas ativo</li></ul>
+    <div style="grid-column: 2"><p class="src">Fonte: <a href="../pendencias/tarefas.yaml" rel="noopener">pendencias/tarefas.yaml</a> <span class="mono">· 01a15b12-ba66-70a0-b099-218776be93be</span></p>
+</div>
+  </li>
+  <li class="attention-item" data-cv-item data-attention-key="01a15b12-b315-731b-ada9-d4f30be06fc5">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">80</span>
+    <div><strong><a href="../projetos/orion.md">Orion</a></strong> <span class="tag">Projeto</span></div>
+    <ul aria-label="Motivo"><li>Risco crítico registrado: Risco crítico: contrato do gateway vence em novembro.</li><li>Lacuna de alta prioridade: budget — Qual o orçamento do Orion?</li></ul>
+    <div style="grid-column: 2"><p class="src">Fonte: <a href="../projetos/orion.md" rel="noopener">projetos/orion.md</a> <span class="mono">· 01a15b12-b315-731b-ada9-d4f30be06fc5</span></p>
+</div>
+  </li>
+  <li class="attention-item" data-cv-item data-attention-key="01a15b12-b783-72f8-ae7d-0c226bb4b2c8">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">65</span>
+    <div><strong><a href="../arquitetura/decisoes/adr-0003-cache-de-simulacoes.md">Cache de simulações</a></strong> <span class="tag">Decisão</span></div>
+    <ul aria-label="Motivo"><li>Decisão proposta, ainda não aceita</li><li>Justificativa não registrada</li></ul>
+    <div style="grid-column: 2"><p class="src">Fonte: <a href="../arquitetura/decisoes/adr-0003-cache-de-simulacoes.md" rel="noopener">arquitetura/decisoes/adr-0003-cache-de-simulacoes.md</a> <span class="mono">· 01a15b12-b783-72f8-ae7d-0c226bb4b2c8</span></p>
+</div>
+  </li>
+  <li class="attention-item" data-cv-item data-attention-key="01a15b12-bbd5-7211-be02-90bb517837a4">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">50</span>
+    <div><strong><a href="../agenda/2026/10.yaml">Reunião de status do Orion</a></strong> <span class="tag">Compromisso</span></div>
+    <ul aria-label="Motivo"><li>Hoje, 14h</li><li>2 pendências relacionadas</li></ul>
+    <div style="grid-column: 2"><p class="src">Fonte: <a href="../agenda/2026/10.yaml" rel="noopener">agenda/2026/10.yaml</a> <span class="mono">· 01a15b12-bbd5-7211-be02-90bb517837a4</span></p>
+</div>
+  </li>
+  <li class="attention-item" data-cv-item data-attention-key="01a15b12-bc4e-71e6-909b-3022b45ca8a6">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">50</span>
+    <div><strong><a href="../agenda/2026/10.yaml">Revisão de arquitetura</a></strong> <span class="tag">Compromisso</span></div>
+    <ul aria-label="Motivo"><li>qui, 22/10/2026, 10h</li></ul>
+    <div style="grid-column: 2"><p class="src">Fonte: <a href="../agenda/2026/10.yaml" rel="noopener">agenda/2026/10.yaml</a> <span class="mono">· 01a15b12-bc4e-71e6-909b-3022b45ca8a6</span></p>
+</div>
+  </li>
+  <li class="attention-item" data-cv-item data-attention-key="01a15b12-b9ed-71e1-ad14-f8290526ea4a">
+    <span class="weight" title="Peso de ordenação (configurável), não probabilidade">45</span>
+    <div><strong><a href="../pendencias/tarefas.yaml">Documentar fluxo de simulação</a></strong> <span class="tag">Tarefa</span></div>
+    <ul aria-label="Motivo"><li>Tarefa aberta</li><li>Sem responsável registrado</li></ul>
+    <div style="grid-column: 2"><p class="src">Fonte: <a href="../pendencias/tarefas.yaml" rel="noopener">pendencias/tarefas.yaml</a> <span class="mono">· 01a15b12-b9ed-71e1-ad14-f8290526ea4a</span></p>
+</div>
+  </li>
+</ol>
+
+</section>
+<section class="block" id="regras">
+  <div class="section-header">
+  <h2>Regras de priorização</h2>
+</div>
+
+  <details><summary>Pesos em uso</summary>
+    <div class="table-wrap"><table><thead><tr><th scope="col">Regra</th><th scope="col">Peso</th></tr></thead><tbody>
+<tr><td class="mono">overdue_task</td><td>100</td></tr><tr><td class="mono">blocked_project</td><td>90</td></tr><tr><td class="mono">blocked_task</td><td>85</td></tr><tr><td class="mono">critical_risk</td><td>80</td></tr><tr><td class="mono">inconsistency</td><td>70</td></tr><tr><td class="mono">pending_decision</td><td>65</td></tr><tr><td class="mono">upcoming_meeting</td><td>50</td></tr><tr><td class="mono">unassigned_task</td><td>45</td></tr><tr><td class="mono">knowledge_gap</td><td>20</td></tr>    </tbody></table></div>
+  </details>
+</section>
+  <section class="block" id="fontes" aria-labelledby="fontes-h">
+    <div class="section-header"><h2 id="fontes-h">Fontes</h2><span class="count">(8)</span>
+      <p class="hint">19 registro(s) lido(s) do repositório local. Os arquivos abaixo são a fonte canônica; este HTML é uma representação derivada.</p></div>
+    <details><summary><i class="icon-slot" data-lucide="file-text" data-icon-class="icon" data-size="16" aria-hidden="true"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></i> Mostrar arquivos de origem</summary>
+      <ul class="list plain"><li data-cv-item><a href="../agenda/2026/10.yaml">agenda/2026/10.yaml</a> <span class="mono">01a15b12-bbd5-7211-be02-90bb517837a4</span></li><li data-cv-item><a href="../agenda/2026/10.yaml">agenda/2026/10.yaml</a> <span class="mono">01a15b12-bc4e-71e6-909b-3022b45ca8a6</span></li><li data-cv-item><a href="../arquitetura/decisoes/adr-0003-cache-de-simulacoes.md">arquitetura/decisoes/adr-0003-cache-de-simulacoes.md</a> <span class="mono">01a15b12-b783-72f8-ae7d-0c226bb4b2c8</span></li><li data-cv-item><a href="../pendencias/tarefas.yaml">pendencias/tarefas.yaml</a> <span class="mono">01a15b12-b87f-730c-83db-2ab82ad61247</span></li><li data-cv-item><a href="../pendencias/tarefas.yaml">pendencias/tarefas.yaml</a> <span class="mono">01a15b12-b9ed-71e1-ad14-f8290526ea4a</span></li><li data-cv-item><a href="../pendencias/tarefas.yaml">pendencias/tarefas.yaml</a> <span class="mono">01a15b12-ba66-70a0-b099-218776be93be</span></li><li data-cv-item><a href="../projetos/atlas.md">projetos/atlas.md</a> <span class="mono">01a15b12-b38f-7288-8311-773c638f772f</span></li><li data-cv-item><a href="../projetos/orion.md">projetos/orion.md</a> <span class="mono">01a15b12-b315-731b-ada9-d4f30be06fc5</span></li></ul>
+    </details>
+  </section>
+</main>
+<footer>
+  <p>Gerado pelo ContextVault · Fonte: repositório local · Relatório somente leitura</p>
+  <p>Retrato dos dados em 20/10/2026 às 09h: alterações posteriores só aparecem ao regenerar (<span class="mono">context-vault dashboard refresh</span>).</p>
+</footer>
+<script type="application/json" id="cv-dashboard-manifest">{"generated_at": "2026-10-20T09:00:00-03:00", "options": {}, "output": "reports/dashboard-attention.html", "schema_version": "1.0", "view": "attention"}</script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js" integrity="sha384-ieG+IKD0d/ZPXyCBTMVAbqsQdns8QGJR/e26WMw7M4fkaI/rHcS/YIoi+ah9WGge" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script>/* ContextVault Dashboard — local, read-only interactions (search, filters, sorting, theme, navigation).
+ * No network access, no file access, no commands: it only shows and hides what is already in the page. */
+(function () {
+  "use strict";
+  var doc = document;
+  var root = doc.documentElement;
+
+  function norm(text) {
+    return (text || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+  }
+  function all(sel, base) { return Array.prototype.slice.call((base || doc).querySelectorAll(sel)); }
+
+  /* ---------- theme: automatic (browser preference) → light → dark */
+  var THEMES = ["auto", "light", "dark"];
+  var THEME_LABEL = { auto: "Tema: automático", light: "Tema: claro", dark: "Tema: escuro" };
+  function storedTheme() {
+    try { return localStorage.getItem("cv-dashboard-theme"); } catch (e) { return null; }
+  }
+  function applyTheme(theme) {
+    if (THEMES.indexOf(theme) < 0) { theme = "auto"; }
+    root.setAttribute("data-theme", theme);
+    all("[data-cv-theme]").forEach(function (btn) {
+      var label = btn.querySelector("[data-cv-theme-label]");
+      if (label) { label.textContent = THEME_LABEL[theme]; }
+      btn.setAttribute("aria-label", THEME_LABEL[theme] + " (alternar)");
+    });
+    try { localStorage.setItem("cv-dashboard-theme", theme); } catch (e) { /* storage unavailable: ignore */ }
+  }
+  applyTheme(storedTheme() || "auto");
+  window.requestAnimationFrame(function () {
+    window.requestAnimationFrame(function () { root.classList.add("cv-ready"); });
+  });
+  all("[data-cv-theme]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var current = root.getAttribute("data-theme") || "auto";
+      applyTheme(THEMES[(THEMES.indexOf(current) + 1) % THEMES.length]);
+    });
+  });
+
+  /* ---------- section navigation, built from the section headers */
+  var nav = doc.querySelector("nav.sections");
+  if (nav) {
+    all("section.block[id]").forEach(function (section) {
+      var heading = section.querySelector("h2");
+      if (!heading) { return; }
+      var link = doc.createElement("a");
+      link.href = "#" + section.id;
+      link.textContent = heading.textContent;
+      nav.appendChild(link);
+    });
+  }
+
+  /* ---------- table filters and counts */
+  function rowMatchesFilters(row, tools) {
+    var ok = true;
+    all("[data-cv-filter]", tools).forEach(function (select) {
+      var value = select.value;
+      if (!value) { return; }
+      var tokens = (row.getAttribute("data-f-" + select.getAttribute("data-cv-filter")) || "").split(" ");
+      if (tokens.indexOf(value) < 0) { ok = false; }
+    });
+    all("[data-cv-flag]", tools).forEach(function (box) {
+      if (box.checked && row.getAttribute("data-flag-" + box.getAttribute("data-cv-flag")) !== "1") { ok = false; }
+    });
+    return ok;
+  }
+  function updateCount(tableId) {
+    var table = doc.getElementById(tableId);
+    if (!table) { return; }
+    var rows = all("tbody tr", table);
+    var visible = rows.filter(function (r) {
+      return !r.classList.contains("cv-hide-filter") && !r.classList.contains("cv-hide-search");
+    }).length;
+    all("[data-cv-count='" + tableId + "']").forEach(function (el) {
+      el.textContent = visible === rows.length ? rows.length + " registro(s)" : visible + " de " + rows.length + " registro(s) visíveis";
+    });
+    var empty = doc.querySelector("[data-cv-empty='" + tableId + "']");
+    if (empty) { empty.hidden = visible !== 0; }
+  }
+  function applyFilters(tools) {
+    var tableId = tools.getAttribute("data-cv-table-tools");
+    var table = doc.getElementById(tableId);
+    if (!table) { return; }
+    all("tbody tr", table).forEach(function (row) {
+      row.classList.toggle("cv-hide-filter", !rowMatchesFilters(row, tools));
+    });
+    updateCount(tableId);
+  }
+  all("[data-cv-table-tools]").forEach(function (tools) {
+    all("select, input[type=checkbox]", tools).forEach(function (input) {
+      input.addEventListener("change", function () { applyFilters(tools); });
+    });
+    var reset = tools.querySelector("[data-cv-reset]");
+    if (reset) {
+      reset.addEventListener("click", function () {
+        all("select", tools).forEach(function (s) { s.value = ""; });
+        all("input[type=checkbox]", tools).forEach(function (c) { c.checked = false; });
+        applyFilters(tools);
+      });
+    }
+    applyFilters(tools);
+  });
+  all("table[id]").forEach(function (t) { updateCount(t.id); });
+
+  /* ---------- sorting */
+  all("th [data-cv-sort]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var th = button.closest("th");
+      var table = button.closest("table");
+      var key = button.getAttribute("data-cv-sort");
+      var ascending = th.getAttribute("aria-sort") !== "ascending";
+      all("th", table).forEach(function (other) { other.removeAttribute("aria-sort"); });
+      th.setAttribute("aria-sort", ascending ? "ascending" : "descending");
+      var body = table.tBodies[0];
+      var rows = all("tr", body);
+      rows.sort(function (a, b) {
+        var x = a.getAttribute("data-s-" + key) || "";
+        var y = b.getAttribute("data-s-" + key) || "";
+        var cmp = x.localeCompare(y, "pt-BR", { numeric: true, sensitivity: "base" });
+        return ascending ? cmp : -cmp;
+      });
+      rows.forEach(function (row) { body.appendChild(row); });
+    });
+  });
+
+  /* ---------- icons: official Lucide SVGs when the pinned library loaded; embedded SVGs otherwise */
+  doc.addEventListener("DOMContentLoaded", function () {
+    var lib = window.lucide;
+    if (!lib || typeof lib.createElement !== "function" || !lib.icons) { return; }
+    all("i[data-lucide]").forEach(function (slot) {
+      var key = slot.getAttribute("data-lucide").replace(/(^|-)([a-z])/g, function (_, d, c) { return c.toUpperCase(); });
+      var node = lib.icons[key];
+      if (!node) { return; }
+      var size = slot.getAttribute("data-size") || "16";
+      var svg = lib.createElement(node);
+      svg.setAttribute("class", slot.getAttribute("data-icon-class") || "icon");
+      svg.setAttribute("width", size);
+      svg.setAttribute("height", size);
+      svg.setAttribute("aria-hidden", "true");
+      svg.setAttribute("focusable", "false");
+      slot.replaceChildren(svg);
+    });
+  });
+
+  /* ---------- text search over every item of the report */
+  var search = doc.querySelector("[data-cv-search]");
+  if (search) {
+    var timer = null;
+    var items = all("[data-cv-item]");
+    var status = doc.querySelector("[data-cv-search-status]");
+    var run = function () {
+      var query = norm(search.value);
+      var shown = 0;
+      items.forEach(function (item) {
+        var hit = !query || norm(item.textContent).indexOf(query) >= 0;
+        item.classList.toggle("cv-hide-search", !hit);
+        if (hit) { shown += 1; }
+      });
+      all("table[id]").forEach(function (t) { updateCount(t.id); });
+      if (status) { status.textContent = query ? shown + " item(ns) correspondem à busca." : ""; }
+    };
+    search.addEventListener("input", function () {
+      clearTimeout(timer);
+      timer = setTimeout(run, 120);
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -86,6 +86,40 @@ class SecurityConfig(_Strict):
     allow_destructive_operations: bool = False
 
 
+class AttentionWeights(_Strict):
+    """Ordering weights of the attention dashboard (not probabilities). Higher = shown first."""
+
+    overdue_task: int = Field(default=100, ge=0, le=1000)
+    blocked_project: int = Field(default=90, ge=0, le=1000)
+    blocked_task: int = Field(default=85, ge=0, le=1000)
+    critical_risk: int = Field(default=80, ge=0, le=1000)
+    inconsistency: int = Field(default=70, ge=0, le=1000)
+    pending_decision: int = Field(default=65, ge=0, le=1000)
+    upcoming_meeting: int = Field(default=50, ge=0, le=1000)
+    unassigned_task: int = Field(default=45, ge=0, le=1000)
+    knowledge_gap: int = Field(default=20, ge=0, le=1000)
+
+
+class DashboardConfig(_Strict):
+    output_dir: str = "reports"            # inside the memory repository; generated HTML is git-ignored
+    allow_external_output: bool = False   # true: --output may point outside the repository
+    # true: Google Fonts (Fira Sans/Fira Code) and the Lucide icon library from pinned CDN URLs (SRI); without
+    # internet the report still works with system fonts and the embedded icons. false: no external request at all.
+    external_assets: bool = True
+    upcoming_days: int = Field(default=7, ge=1, le=90)    # "próximos compromissos"
+    recent_days: int = Field(default=7, ge=1, le=365)     # "atividades recentes" / concluídas no período
+    attention_days: int = Field(default=2, ge=0, le=30)   # compromissos que entram no painel de atenção
+    attention: AttentionWeights = Field(default_factory=AttentionWeights)
+
+    @field_validator("output_dir")
+    @classmethod
+    def _relative(cls, value: str) -> str:
+        value = value.strip().replace("\\", "/").strip("/")
+        if not value or value.startswith(".") or ".." in value.split("/") or ":" in value:
+            raise ValueError("output_dir deve ser uma pasta relativa dentro do repositório (ex.: reports)")
+        return value
+
+
 class Config(_Strict):
     schema_version: Literal[1] = 1
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
@@ -93,6 +127,7 @@ class Config(_Strict):
     search: SearchConfig = Field(default_factory=SearchConfig)
     agenda: AgendaConfig = Field(default_factory=AgendaConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
+    dashboard: DashboardConfig = Field(default_factory=DashboardConfig)
 
     @property
     def timezone(self) -> str:

@@ -197,6 +197,24 @@ uv run context-vault --help  # CLI
 >   detecção de contradição/sensibilidade é léxica.
 > - A suíte completa leva ~1min40s (setup dos testes de recuperação + processos reais nos testes multiagente).
 
+## Módulo Dashboard ([dashboard.md](dashboard.md)) ✅
+
+- [x] Pacote `src/context_vault/dashboard/` (`models`, `queries`, `filters`, `aggregations`, `attention`, `renderer`,
+      `security`, `service`) — modelo Pydantic versionado, consultas oficiais do Core, um snapshot por geração
+- [x] 10 visões: `overview`, `tasks`, `projects`, `project-detail`, `people`, `person-detail`, `agenda`,
+      `architecture`, `knowledge`, `attention` (templates Jinja2 + componentes reutilizáveis)
+- [x] Filtros por pessoa, projeto, assunto, período, status, prioridade, atrasadas, sem responsável, sem prazo,
+      cancelados; agrupamento por responsável/projeto/status; entidades resolvidas pelo Core (ambíguo → pergunta)
+- [x] HTML autossuficiente (CSS/JS embutidos, CSP com hash; Fira + Lucide por CDN fixado com SRI e fallback offline),
+      busca/filtros/ordenação/tema/navegação locais, design system ui-ux-pro-max (ícones SVG, 44px, AA, reduced-motion)
+- [x] `dashboard build|refresh|list|open`, `--json`, `--include-model`; erros estruturados; `written: false` em falha
+- [x] Segurança: autoescape, verificação do HTML antes de gravar, segredos ocultados, caminhos restritos a `reports/`,
+      relatórios fora do Git; geração nunca altera registros canônicos
+- [x] Skill: `references/dashboard.md` + roteamento no `SKILL.md`
+- [x] Testes: `tests/dashboard/` (81 — consultas, agregações, renderização, segurança, CLI, CV-DASH-001…015);
+      exemplos em `docs/examples/dashboard/` (`scripts/dashboard_demo.py`); uso e limitações em
+      [dashboard-uso.md](dashboard-uso.md); decisões D49–D56
+
 ## Etapa 8 — Documentação e entrega ⬜
 
 - [ ] README (instalação, configuração, uso)
@@ -220,3 +238,4 @@ uv run context-vault --help  # CLI
 | 2026-10-20 | 5 | Relacionamentos: validação de relações tipadas, `remove_relations`, grafo bidirecional (`related`), síntese por assunto (`context`), `meetings brief` e `daily brief` com registrado x sugestões. 229 testes. |
 | 2026-10-20 | 6 | Skill: `SKILL.md` + 6 referências, `AGENTS.md`/`GEMINI.md`, plugin Claude Code, extensão Gemini, `install-skill` para Claude Code/Codex/Gemini/Devin (pasta compartilhada `.agents/skills`), status/desinstalação seguras, pacote zip com instaladores, skill no wheel, `python -m context_vault`. 270 testes. |
 | 2026-10-20 | 7 | Cenários: fluxos A–G, 84 cenários do catálogo no nível Core, segurança (injeção em notas, caminhos, symlinks, falha de E/S), multiagente com processos concorrentes, portabilidade (CRLF/BOM, nomes Windows), relatório `--cv-report`. Correções: `context --since`, `journal --period`, histórico detalhado, duplicatas por responsável/contexto, datas vagas, pessoa provisória, índice detalhado, envelope JSON em erros de E/S. 340 testes. |
+| 2026-10-20 | Dashboard | Módulo de dashboards HTML locais (10 visões, filtros, atenção com pesos configuráveis, regeneração por manifesto, CSP/escape/segredos, skill). Revisão de UI com ui-ux-pro-max (Fira, Lucide, tokens, acessibilidade). 422 testes (1 ignorado). |

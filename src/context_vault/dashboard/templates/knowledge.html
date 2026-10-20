@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/status-badge.html" import badge with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% from "components/source-link.html" import source_link, ref_link with context %}
+{% macro knowledge_card(k) %}
+<article class="card" data-cv-item data-note-id="{{ k.id }}">
+  <div class="row"><h3><a href="{{ href(k.source.path) }}">{{ k.title }}</a></h3><span class="tag">{{ k.type_label }}</span></div>
+  {% if k.description %}<p class="muted">{{ k.description }}</p>{% endif %}
+  {% if k.entities %}<p><span class="muted">Siglas e entidades:</span> {{ k.entities|join(", ") }}</p>{% endif %}
+  {% if k.systems %}<details><summary>Sistemas e serviços ({{ k.systems|length }})</summary><ul>{% for x in k.systems %}<li>{{ x }}</li>{% endfor %}</ul></details>{% endif %}
+  {% if k.concepts %}<details><summary>Conceitos ({{ k.concepts|length }})</summary><ul>{% for x in k.concepts %}<li>{{ x }}</li>{% endfor %}</ul></details>{% endif %}
+  {% if k.integrations %}<details><summary>Integrações ({{ k.integrations|length }})</summary><ul>{% for x in k.integrations %}<li>{{ x }}</li>{% endfor %}</ul></details>{% endif %}
+  <p class="src">{{ k.relation_count }} relação(ões){% if k.open_gaps %} · {{ k.open_gaps }} lacuna(s){% endif %} · atualizado em {{ k.updated_label }}</p>
+  {{ source_link(k.source) }}
+</article>
+{% endmacro %}
+{% block content %}
+<section class="block" id="dominios">
+  {{ section_header("Domínios", data.domains|length) }}
+  {% if data.domains %}<div class="grid wide">{% for k in data.domains %}{{ knowledge_card(k) }}{% endfor %}</div>
+  {% else %}{{ empty("Nenhum domínio registrado.", "O conhecimento aparecerá aqui quando for registrado no ContextVault.") }}{% endif %}
+</section>
+<section class="block" id="arquitetura">
+  {{ section_header("Arquitetura", data.architecture|length) }}
+  {% if data.architecture %}<div class="grid wide">{% for k in data.architecture %}{{ knowledge_card(k) }}{% endfor %}</div>
+  {% else %}<p class="muted">Nenhuma nota de arquitetura registrada.</p>{% endif %}
+</section>
+<section class="block" id="mais-relacionados">
+  {{ section_header("Assuntos mais relacionados", data.most_related|length) }}
+  {% if data.most_related %}<ol class="list">{% for k in data.most_related %}<li data-cv-item><a href="{{ href(k.source.path) }}">{{ k.title }}</a> <span class="tag">{{ k.type_label }}</span> — {{ k.relation_count }} relação(ões)</li>{% endfor %}</ol>
+  {% else %}<p class="muted">Nenhuma relação registrada.</p>{% endif %}
+</section>
+<section class="block" id="recentes">
+  {{ section_header("Atualizados recentemente", data.recent|length) }}
+  {% if data.recent %}<ul class="list">{% for k in data.recent %}<li data-cv-item><a href="{{ href(k.source.path) }}">{{ k.title }}</a> <span class="tag">{{ k.type_label }}</span> <span class="muted">· {{ k.updated_label }}</span></li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhum assunto registrado.</p>{% endif %}
+</section>
+<section class="block" id="lacunas">
+  {{ section_header("Lacunas de conhecimento", data.gaps|length, "Informações que faltam (em aberto). Lacunas adiadas pelo usuário não aparecem.") }}
+  {% if data.gaps %}<ul class="list">{% for g in data.gaps %}<li data-cv-item>{{ badge(g.priority, g.priority_label) }} <strong>{{ g.field }}</strong>{% if g.question %} — {{ g.question }}{% endif %}<div class="src">{{ ref_link(g.record) }}</div></li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhuma lacuna em aberto.</p>{% endif %}
+</section>
+<section class="block" id="provisorios">
+  {{ section_header("Registros provisórios", data.provisional|length + data.inbox|length) }}
+  {% if data.provisional %}<ul class="list">{% for k in data.provisional %}<li data-cv-item>{{ badge("provisional", "Provisório") }} <a href="{{ href(k.source.path) }}">{{ k.title }}</a> <span class="tag">{{ k.type_label }}</span></li>{% endfor %}</ul>{% endif %}
+  {% if data.inbox %}<h3>Capturas na inbox (não classificadas)</h3><ul class="list">{% for i in data.inbox %}<li data-cv-item>{{ i.text }}{% if i.question %}<div class="muted">Pergunta pendente: {{ i.question }}</div>{% endif %}<div class="src">{{ i.recorded_label }}</div></li>{% endfor %}</ul>{% endif %}
+  {% if not data.provisional and not data.inbox %}<p class="muted">Nenhum registro provisório.</p>{% endif %}
+</section>
+{% if data.others %}
+<section class="block" id="outros">
+  {{ section_header("Projetos e times", data.others|length) }}
+  <div class="grid">{% for k in data.others %}{{ knowledge_card(k) }}{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

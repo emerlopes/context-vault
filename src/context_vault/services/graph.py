@@ -147,13 +147,15 @@ class Graph:
 
     # ------------------------------------------------------------ build
     @classmethod
-    def build(cls, vault: Vault, catalog: Catalog | None = None) -> "Graph":
+    def build(cls, vault: Vault, catalog: Catalog | None = None, *, tasks: list[Any] | None = None,
+              appointments: list[tuple[str, Any]] | None = None) -> "Graph":
+        """`tasks`/`appointments` may be passed when the caller already loaded them (one read per run)."""
         from .records import load_appointments, load_tasks
 
         catalog = catalog or Catalog.load(vault)
         graph = cls()
-        tasks = load_tasks(vault)
-        appointments = load_appointments(vault)
+        tasks = load_tasks(vault) if tasks is None else tasks
+        appointments = load_appointments(vault) if appointments is None else appointments
         for entry in catalog.valid():
             meta = entry.meta or {}
             graph.nodes[entry.id] = Node(entry.id, "note", entry.title, entry.type, meta.get("status"), entry.path)  # type: ignore[arg-type]

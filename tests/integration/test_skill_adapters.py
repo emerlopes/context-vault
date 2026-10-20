@@ -21,7 +21,7 @@ from context_vault.cli import app
 
 ROOT = Path(__file__).resolve().parents[2]
 SKILL = ROOT / "skills" / "context-vault"
-REFERENCES = ["classification", "retrieval", "agenda", "meetings", "tasks", "conventions"]
+REFERENCES = ["classification", "retrieval", "agenda", "meetings", "tasks", "conventions", "dashboard"]
 SKILL_FILES = ["SKILL.md", *[f"references/{name}.md" for name in REFERENCES]]
 
 

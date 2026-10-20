@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/project-card.html" import project_card with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% block content %}
+{% set groups = [("Bloqueados", ["blocked"]), ("Ativos", ["active"]), ("Planejados", ["planned"]), ("Pausados", ["paused"]), ("Concluídos", ["completed"]), ("Cancelados e arquivados", ["cancelled", "archived"])] %}
+{% if not data.projects %}
+<section class="block" id="projetos">{{ section_header("Projetos", 0) }}{{ empty("Nenhum projeto registrado.", "Os projetos aparecerão aqui quando forem adicionados ao ContextVault.") }}</section>
+{% endif %}
+{% for label, statuses in groups %}
+{% set items = data.projects|selectattr("status", "in", statuses)|list %}
+{% if items %}
+<section class="block" id="projetos-{{ statuses[0] }}">
+  {{ section_header(label, items|length, "\"% das tarefas concluídas\" mede tarefas vinculadas, não a conclusão do projeto." if loop.first else none) }}
+  <div class="grid">{% for p in items %}{{ project_card(p) }}{% endfor %}</div>
+</section>
+{% endif %}
+{% endfor %}
+{% endblock %}

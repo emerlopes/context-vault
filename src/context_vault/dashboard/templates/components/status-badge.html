@@ -1,0 +1,17 @@
+{% from "components/icon.html" import icon with context %}
+{# Status = SVG icon + text label (color is never the only indicator). #}
+{% set TONES = {
+  "open": ("info", "circle"), "in_progress": ("info", "loader"), "blocked": ("danger", "ban"),
+  "completed": ("good", "check"), "cancelled": ("neutral", "x"), "planned": ("neutral", "calendar"),
+  "active": ("good", "circle-check"), "paused": ("warn", "pause"), "archived": ("neutral", "archive"),
+  "proposed": ("warn", "help"), "accepted": ("good", "check"), "rejected": ("neutral", "x"),
+  "deprecated": ("neutral", "arrow-down"), "superseded": ("neutral", "replace"), "scheduled": ("info", "clock"),
+  "overdue": ("danger", "alert"), "done": ("good", "check"), "missed": ("danger", "alert"),
+  "high": ("danger", "arrow-up"), "urgent": ("danger", "chevrons-up"), "low": ("neutral", "arrow-down"),
+  "normal": ("neutral", "minus"), "medium": ("warn", "minus"), "provisional": ("warn", "hourglass"),
+  "past": ("neutral", "history"), "current": ("good", "dot"), "missing": ("danger", "alert")
+} %}
+{% macro badge(status, label) %}
+{% set tone = TONES.get(status, ("neutral", "dot")) %}
+<span class="badge tone-{{ tone[0] }}" data-status="{{ status }}">{{ icon(tone[1], 14) }}<span>{{ label }}</span></span>
+{% endmacro %}

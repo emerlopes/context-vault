@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/task-table.html" import task_table with context %}
+{% block content %}
+{% if data.groups %}
+{% set by_id = {} %}{% for t in data.tasks %}{% set _ = by_id.update({t.id: t}) %}{% endfor %}
+<section class="block" id="grupos">
+  {{ section_header("Tarefas agrupadas", data.tasks|length, "Total geral: " ~ data.tasks|length ~ " tarefa(s). Uma tarefa compartilhada aparece em cada grupo, mas é contada uma única vez no total.") }}
+</section>
+{% for g in data.groups %}
+<section class="block" id="grupo-{{ loop.index }}">
+  {{ section_header(g.label, g.tasks|length, level=2) }}
+  {% set group_tasks = [] %}{% for tid in g.tasks %}{% set _ = group_tasks.append(by_id[tid]) %}{% endfor %}
+  {{ task_table(group_tasks, "tasks-group-" ~ loop.index, options=data.filter_options, tools=false) }}
+</section>
+{% endfor %}
+{% else %}
+<section class="block" id="tarefas">
+  {{ section_header("Tarefas", data.tasks|length, "Filtre, ordene ou busque. Concluídas não contam como atrasadas; tarefas sem prazo nunca são atrasadas.") }}
+  {{ task_table(data.tasks, "tasks-table", options=data.filter_options) }}
+</section>
+{% endif %}
+{% endblock %}

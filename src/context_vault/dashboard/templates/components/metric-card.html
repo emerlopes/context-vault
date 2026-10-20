@@ -1,0 +1,12 @@
+{# One indicator. `None` means the data is unavailable — never shown as zero. #}
+{% macro metric_card(c) %}
+<div class="metric tone-{{ c.tone }}" data-metric="{{ c.key }}">
+  {% if c.value is none %}
+  <div class="value nodata">Sem dados</div>
+  {% else %}
+  <div class="value">{{ c.value }}</div>
+  {% endif %}
+  <div class="label">{{ c.label }}</div>
+  {% if c.hint %}<div class="hint">{{ c.hint }}</div>{% endif %}
+</div>
+{% endmacro %}

@@ -1,0 +1,7 @@
+{% macro section_header(title, count=none, hint=none, level=2) %}
+<div class="section-header">
+  <h{{ level }}>{{ title }}</h{{ level }}>
+  {% if count is not none %}<span class="count">({{ count }})</span>{% endif %}
+  {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+</div>
+{% endmacro %}

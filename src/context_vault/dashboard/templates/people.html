@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/person-card.html" import person_card with context %}
+{% from "components/task-table.html" import task_table with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% from "components/source-link.html" import source_link, ref_list with context %}
+{% block content %}
+<section class="block" id="pessoas">
+  {{ section_header("Pessoas", data.people|length, "Projetos atuais e participações anteriores vêm dos vínculos com início e término. Encerrar a participação em um projeto não significa sair da empresa.") }}
+  {% if data.people %}<div class="grid">{% for p in data.people %}{{ person_card(p) }}{% endfor %}</div>
+  {% else %}{{ empty("Nenhuma pessoa registrada.", "As pessoas aparecerão aqui quando forem adicionadas ao ContextVault.") }}{% endif %}
+</section>
+<section class="block" id="times">
+  {{ section_header("Times", data.teams|length) }}
+  {% if data.teams %}<div class="grid">{% for t in data.teams %}
+    <article class="card" data-cv-item><h3><a href="{{ href(t.source.path) }}">{{ t.title }}</a></h3>{% if t.description %}<p class="muted">{{ t.description }}</p>{% endif %}{{ source_link(t.source) }}</article>
+  {% endfor %}</div>
+  {% else %}<p class="muted">Nenhum time registrado.</p>{% endif %}
+</section>
+<section class="block" id="sem-identificacao">
+  {{ section_header("Responsabilidades sem identificação clara", data.unclear|length, "Tarefas abertas sem responsável, com nome não vinculado a uma pessoa cadastrada ou apontando para uma pessoa inexistente.") }}
+  {{ task_table(data.unclear, "people-unclear", tools=false, empty_title="Todas as tarefas abertas têm responsável identificado.") }}
+  {% if data.projects_without_owner %}<p>Projetos em andamento sem responsável registrado: {{ ref_list(data.projects_without_owner) }}</p>{% endif %}
+</section>
+{% endblock %}

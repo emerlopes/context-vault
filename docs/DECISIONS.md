@@ -439,3 +439,77 @@ persistido. Cada teste cita no próprio código os IDs que cobre (`CV-0xx`, inte
 `pytest --cv-report docs/RELATORIO_TESTES.md` (plugin `tests/cv_report.py`) gera o relatório no modelo do catálogo
 §18. O nível agente (perguntas e respostas da conversa) fica em `tests/scenarios/agent_level.yaml` com status
 próprio — `BLOQUEADO` enquanto não houver agente executável para rodar o catálogo §20.
+
+## D49 — Dashboard: camada de apresentação sobre o Core
+
+O módulo `src/context_vault/dashboard/` ([dashboard.md](dashboard.md), uso em [dashboard-uso.md](dashboard-uso.md))
+não tem modelo próprio de tarefas, projetos ou pessoas: um `Snapshot` lê o catálogo (cache), as tarefas, a agenda e
+o grafo **uma vez** por geração (`Graph.build` passou a aceitar `tasks`/`appointments` já carregados) e as regras
+vêm do Core — `is_overdue` e `matches_person` foram expostos em `services/tasks.py` e são usados também por
+`tasks list`. O resultado é um modelo Pydantic versionado (`schema_version: "1.0"`, envelope com `view`,
+`generated_at`, `timezone`, `filters`, `metrics`, `data`, `sources`, `warnings`); os templates Jinja2 só imprimem
+valores já formatados (datas, rótulos, "Não informado").
+
+## D50 — Templates e assets dentro do pacote; relatórios em `reports/` da memória
+
+A spec desenha `templates/` e `assets/` na raiz, mas o ContextVault separa o código (este repositório) da
+memória (outro repositório). Templates e assets ficam em `src/context_vault/dashboard/` para funcionarem a partir
+do wheel; os HTMLs vão para `<memória>/reports/` (`dashboard.output_dir`). `reports/.gitignore` (conteúdo `*`) é
+criado na primeira geração e memórias novas têm `reports/` no `.gitignore`: o `status` continua limpo e nada
+sensível é commitado. Saída fora do repositório só com `dashboard.allow_external_output: true`.
+
+## D51 — HTML autossuficiente e à prova de injeção
+
+CSS e JS são embutidos; a CSP (`default-src 'none'`, `script-src 'sha256-<hash do dashboard.js>'`,
+`style-src 'unsafe-inline'`, `img-src data:`) impede rede e qualquer script que não seja o do pacote. Autoescape em
+tudo; o manifesto vai em `<script type="application/json">` via `tojson`. Antes de gravar, `security.check_html`
+valida a estrutura e recusa recursos externos, `javascript:`, atributos `on*`, `<iframe>/<form>/<base>` e
+`<script>` a mais. Segredos (padrões de `services/privacy.py`) são ocultados em todo texto do modelo
+(`SECRET_REDACTED`). O sucesso só é devolvido depois da escrita atômica e da releitura; falha de E/S →
+`REPOSITORY_UNAVAILABLE` com `details.written: false` (CV-DASH-015).
+
+## D52 — Envelope de resposta e códigos de erro do dashboard
+
+A CLI mantém o envelope de sempre (`status`/`operation`) e acrescenta `success: true`, `output_path`, `uri`,
+`generated_at`, `records_read`, `metrics` e `warnings` (spec §13). Ambiguidade usa o código existente
+`AMBIGUOUS_MATCH` (exit 4) com `details.candidates` e `details.filter` ("projeto", "pessoa", "assunto") em vez de
+um código novo `AMBIGUOUS_PROJECT`: a skill já trata esse código. `--json` é aceito (a saída já é JSON por padrão).
+
+## D53 — Regras de indicadores
+
+- Uma tarefa conta uma vez (IDs duplicados num arquivo editado à mão geram `DUPLICATE_ID` e são ignorados);
+  em agrupamentos, uma tarefa ligada a dois projetos aparece nos dois grupos, mas o total geral a conta uma vez.
+- Atraso = tarefa aberta (open/in_progress/blocked) com `due_date` anterior ao dia local no fuso configurado.
+- Progresso = concluídas / (vinculadas − canceladas), rotulado "N de M tarefas concluídas · X% das tarefas
+  concluídas"; sem tarefas → "Sem dados suficientes para calcular". Tarefas vinculadas a um projeto incluem as
+  ligadas pela reunião de origem (mesma regra de `tasks list --related`).
+- Projeto bloqueado = status `blocked` ou ativo/planejado com bloqueio em aberto.
+- Participação atual × anterior vem de `memberships` (`end_date`); um projeto com vínculo vigente nunca aparece
+  como anterior.
+- Fonte indisponível (arquivo de tarefas ou agenda inválido) → indicadores `null` ("Sem dados") e aviso
+  `TASKS_UNAVAILABLE`/`AGENDA_UNAVAILABLE`, nunca zero; nada é corrigido.
+
+## D54 — Painel de atenção determinístico
+
+Regras fixas com pesos em `dashboard.attention` (padrão da spec + `inconsistency: 70`). Um item por registro: se
+várias regras atingem o mesmo registro, vale o maior peso e todos os motivos são listados. Empate → mais dias de
+atraso, prazo mais próximo, horário mais cedo, título. "Risco crítico" é léxico nas seções `Riscos`; lacunas
+"relevantes" são as em aberto de prioridade alta (adiadas nunca aparecem); compromissos entram de hoje até
+`attention_days`.
+
+## D55 — Regeneração por manifesto
+
+O manifesto guarda a visão e as opções pedidas, com pessoa/projeto/assunto **resolvidos para o ID** (estável a
+renomeações) e períodos **como pedidos** ("esta semana" é reavaliado no `refresh`). Fica embutido no HTML e num
+registro derivado em `.context-vault/cache/dashboards/registry.json`, usado por `dashboard list`, `refresh` e
+`open` sem `--output` (o mais recente). O registro é cache: apagá-lo não perde nada que o HTML não tenha.
+
+## D56 — Fontes e ícones por CDN fixado, com degradação offline
+
+Decisão do usuário: "rodar local" não exige rodar sem internet. Por padrão (`dashboard.external_assets: true`)
+o relatório usa Google Fonts (Fira Sans/Fira Code, design system da skill ui-ux-pro-max) e a biblioteca Lucide
+em versão exata (`lucide@0.460.0`, jsDelivr) com `integrity` (SRI). Isso substitui o "não depender de CDNs/fontes
+remotas" da spec §3.4/§9.4 sem perder a garantia de funcionamento: cada ícone é um `<i data-lucide>` que já
+contém o SVG embutido (trocado pelo oficial quando a biblioteca carrega) e a pilha de fontes cai para as do
+sistema. A CSP e `check_html` aceitam apenas essas URLs; `external_assets: false` volta ao modo estritamente
+offline (nenhum host liberado na CSP).

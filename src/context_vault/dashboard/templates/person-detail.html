@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/status-badge.html" import badge with context %}
+{% from "components/task-table.html" import task_table with context %}
+{% from "components/event-list.html" import event_list with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% from "components/source-link.html" import source_link, ref_link, ref_list with context %}
+{% block content %}
+{% set p = data.person %}
+<section class="block" id="identificacao">
+  {{ section_header("Identificação") }}
+  <div class="card" data-cv-item>
+    <div class="row"><h3>{{ p.name }}</h3>{% if p.provisional %}{{ badge("provisional", "Cadastro provisório") }}{% endif %}</div>
+    <dl>
+      <dt>Função</dt><dd>{{ p.role or "Não informado" }}</dd>
+      <dt>Equipe atual</dt><dd>{{ ref_list(p.teams) }}</dd>
+    </dl>
+    {{ source_link(p.source) }}
+  </div>
+</section>
+<section class="block" id="responsabilidades">
+  {{ section_header("Responsabilidades atuais", p.responsibilities|length) }}
+  {% if p.responsibilities %}<ul class="list">{% for r in p.responsibilities %}<li data-cv-item>{{ r }}</li>{% endfor %}</ul>{% else %}<p class="muted">Nenhuma responsabilidade registrada.</p>{% endif %}
+</section>
+<section class="block" id="projetos-atuais">
+  {{ section_header("Projetos atuais", p.current_projects|length) }}
+  {% if p.current_projects %}<ul class="list">{% for x in p.current_projects %}<li data-cv-item>{{ ref_link(x.target) }}{% if x.role %} — {{ x.role }}{% endif %} <span class="muted">({{ x.period_label }})</span> {{ badge("current", "Atual") }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhum projeto atual registrado.</p>{% endif %}
+</section>
+<section class="block" id="projetos-anteriores">
+  {{ section_header("Projetos anteriores", p.past_projects|length, "Participações encerradas — não significa desligamento da empresa.") }}
+  {% if p.past_projects %}<ul class="list">{% for x in p.past_projects %}<li class="past" data-cv-item>{{ ref_link(x.target) }}{% if x.role %} — {{ x.role }}{% endif %} <span class="muted">({{ x.period_label }})</span> {{ badge("past", "Anterior") }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhuma participação anterior registrada.</p>{% endif %}
+</section>
+<section class="block" id="tarefas-abertas">
+  {{ section_header("Tarefas abertas", data.open_tasks|length) }}
+  {{ task_table(data.open_tasks, "person-open-tasks", tools=false, empty_title="Nenhuma tarefa aberta.") }}
+</section>
+<section class="block" id="tarefas-concluidas">
+  {{ section_header("Tarefas concluídas", data.completed_tasks|length) }}
+  {{ task_table(data.completed_tasks, "person-done-tasks", tools=false, empty_title="Nenhuma tarefa concluída.") }}
+</section>
+<section class="block" id="compromissos">
+  {{ section_header("Próximos compromissos", data.events|length) }}
+  {{ event_list(data.events, "Nenhum compromisso com esta pessoa no período.") }}
+</section>
+<section class="block" id="relacoes">
+  {{ section_header("Relações com assuntos e sistemas", data.relations|length) }}
+  {% if data.relations %}<ul class="list">{% for r in data.relations %}<li data-cv-item class="{{ '' if r.current else 'past' }}">{{ ref_link(r.source_node) }} <span class="muted">{{ r.relation_label }}</span> {{ ref_link(r.target) }}{% if not r.current %} {{ badge("past", "Encerrada") }}{% endif %}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhuma relação registrada.</p>{% endif %}
+</section>
+<section class="block" id="historico">
+  {{ section_header("Histórico de mudanças", data.history|length) }}
+  {% if data.history %}<ul class="list">{% for h in data.history %}<li data-cv-item>{{ h }}</li>{% endfor %}</ul>{% else %}<p class="muted">Nenhuma mudança registrada.</p>{% endif %}
+</section>
+{% endblock %}

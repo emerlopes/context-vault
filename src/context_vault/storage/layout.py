@@ -43,6 +43,8 @@ GITIGNORE = """\
 .context-vault/locks/
 .context-vault/cache/
 .context-vault/journal/pending/
+# Dashboards gerados (podem conter informações sensíveis; reconstruíveis com `dashboard refresh`)
+reports/
 *.tmp
 .DS_Store
 """

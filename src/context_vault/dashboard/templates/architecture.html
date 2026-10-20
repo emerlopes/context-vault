@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/decision-card.html" import decision_card with context %}
+{% from "components/empty-state.html" import empty with context %}
+{% from "components/source-link.html" import source_link, ref_link, ref_list with context %}
+{% macro statement_list(items, empty_text) %}
+{% if items %}<ul class="list">{% for s in items %}<li data-cv-item>{{ s.text }}<div class="src">{{ ref_link(s.record) }}{% if s.section %} · {{ s.section }}{% endif %}</div></li>{% endfor %}</ul>
+{% else %}<p class="muted">{{ empty_text }}</p>{% endif %}
+{% endmacro %}
+{% block content %}
+<section class="block" id="aceitas">
+  {{ section_header("Decisões aceitas (vigentes)", data.accepted|length) }}
+  {% if data.accepted %}<div class="grid wide">{% for x in data.accepted %}{{ decision_card(x) }}{% endfor %}</div>
+  {% else %}{{ empty("Nenhuma decisão aceita registrada.") }}{% endif %}
+</section>
+<section class="block" id="propostas">
+  {{ section_header("Decisões propostas / pendentes", data.proposed|length, "Ainda não aceitas: não tratar como decisão vigente.") }}
+  {% if data.proposed %}<div class="grid wide">{% for x in data.proposed %}{{ decision_card(x) }}{% endfor %}</div>
+  {% else %}<p class="muted">Nenhuma decisão aguardando definição.</p>{% endif %}
+</section>
+<section class="block" id="hipoteses">
+  {{ section_header("Hipóteses", data.hypotheses|length, "Afirmações registradas como não confirmadas.") }}
+  {{ statement_list(data.hypotheses, "Nenhuma hipótese registrada.") }}
+</section>
+<section class="block" id="discussoes">
+  {{ section_header("Discussões sem decisão", data.open_questions|length, "Dúvidas e problemas registrados que ainda não têm decisão.") }}
+  {{ statement_list(data.open_questions, "Nenhuma discussão em aberto registrada.") }}
+</section>
+<section class="block" id="substituidas">
+  {{ section_header("Decisões substituídas (histórico)", data.superseded|length, "Não vigentes: cada uma indica a decisão que a substituiu.") }}
+  {% if data.superseded %}<div class="grid wide">{% for x in data.superseded %}{{ decision_card(x) }}{% endfor %}</div>
+  {% else %}<p class="muted">Nenhuma decisão substituída.</p>{% endif %}
+  {% if data.rejected %}<details><summary>Rejeitadas, obsoletas ou arquivadas ({{ data.rejected|length }})</summary><div class="grid wide">{% for x in data.rejected %}{{ decision_card(x) }}{% endfor %}</div></details>{% endif %}
+</section>
+<section class="block" id="integracoes">
+  {{ section_header("Integrações entre sistemas", data.integrations|length) }}
+  {{ statement_list(data.integrations, "Nenhuma integração registrada.") }}
+</section>
+<section class="block" id="dependencias">
+  {{ section_header("Dependências", data.dependencies|length) }}
+  {% if data.dependencies %}<ul class="list">{% for r in data.dependencies %}<li data-cv-item>{{ ref_link(r.source_node) }} <span class="muted">{{ r.relation_label }}</span> {{ ref_link(r.target) }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhuma dependência registrada.</p>{% endif %}
+</section>
+<section class="block" id="riscos">
+  {{ section_header("Riscos arquiteturais", data.risks|length) }}
+  {{ statement_list(data.risks, "Nenhum risco arquitetural registrado.") }}
+</section>
+<section class="block" id="problemas">
+  {{ section_header("Problemas conhecidos", data.problems|length, "Bloqueios em aberto registrados nos projetos.") }}
+  {% if data.problems %}<ul class="list">{% for b in data.problems %}<li data-cv-item>{{ b.description }}{% if b.related %} — {{ ref_list(b.related) }}{% endif %}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Nenhum problema em aberto registrado.</p>{% endif %}
+</section>
+{% endblock %}

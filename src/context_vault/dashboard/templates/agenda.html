@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "components/section-header.html" import section_header with context %}
+{% from "components/event-list.html" import event_list with context %}
+{% from "components/source-link.html" import ref_list with context %}
+{% block content %}
+<section class="block" id="hoje">
+  {{ section_header("Hoje", data.today|length) }}
+  {{ event_list(data.today, "Nenhum compromisso hoje.", context=true) }}
+</section>
+<section class="block" id="periodo">
+  {{ section_header("Compromissos do período", data.events|length, data.range_label ~ " · agenda mantida manualmente no ContextVault (sem sincronização com calendários externos).") }}
+  {{ event_list(data.events, "Nenhum compromisso no período.", context=true) }}
+</section>
+<section class="block" id="reunioes">
+  {{ section_header("Próximas reuniões", data.meetings|length) }}
+  {{ event_list(data.meetings, "Nenhuma reunião no período.", context=true) }}
+</section>
+{% if data.projects %}
+<section class="block" id="projetos">
+  {{ section_header("Projetos relacionados", data.projects|length) }}
+  <p data-cv-item>{{ ref_list(data.projects) }}</p>
+</section>
+{% endif %}
+{% if data.include_cancelled %}
+<section class="block" id="cancelados">
+  {{ section_header("Cancelados", data.cancelled|length, "Não são eventos ativos; aparecem porque o filtro de cancelados foi solicitado.") }}
+  {{ event_list(data.cancelled, "Nenhum compromisso cancelado no período.") }}
+</section>
+{% endif %}
+{% endblock %}
