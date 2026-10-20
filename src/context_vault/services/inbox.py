@@ -49,6 +49,9 @@ def load_inbox(vault: Vault) -> list[InboxEntry]:
 
 def add_entry(vault: Vault, text: str, *, entities: list[str] | None = None, question: str | None = None,
               source_type: SourceType = SourceType.USER, request_id: str | None = None) -> tuple[InboxEntry, str | None]:
+    from .privacy import guard_credentials
+
+    guard_credentials([text, question or "", *(entities or [])])
     now = vault.now()
     with Transaction(vault, "context-vault: inbox add") as tx:
         tx.reindex = False

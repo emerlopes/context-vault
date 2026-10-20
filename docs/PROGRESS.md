@@ -59,20 +59,41 @@ uv run context-vault --help  # CLI
 - [x] Lacunas de conhecimento (`knowledge_gaps`, doc de assistência §8): `add_gaps` / `resolve_gaps` (resolved/deferred), `gaps list`
 - [x] Testes: persistência, índice, busca, idempotência, concorrência, recuperação, inbox, lacunas (97 testes)
 
-## Etapa 3 — Módulos de conhecimento ⬜
+## Etapa 3 — Módulos de conhecimento ✅
 
 - [x] Templates de seções por tipo (feito na Etapa 2 — `services/templates.py`)
-- [ ] `supersedes` / `superseded_by` entre ADRs (numeração automática já feita na Etapa 2)
-- [ ] Contradições: detecção de afirmação conflitante no Core (preservação do estado anterior via `memory.correct` já feita na Etapa 2)
-- [ ] Fatos x hipóteses (`agent_inference` marcado)
-- [ ] Projetos: status permitidos, marcos/entregas com data, bloqueios
-- [ ] Pessoas/times: desambiguação de homônimos (`AMBIGUOUS_MATCH`), filtros de privacidade
-- [ ] Atualização de referências ao renomear (IDs já estáveis; falta atualizar `entities`/menções em outras notas)
-- [ ] Exclusão controlada (`memory.delete`, exige `allow_destructive_operations` + confirmação)
-- [ ] Lacunas: criar a partir dos fluxos do agente (Exemplos B–H do doc de assistência)
-- [ ] Testes de classificação (assunto conhecido/desconhecido, sigla ambígua, múltiplos candidatos, duplicado, contraditório)
+- [x] `supersedes` / `superseded_by` entre ADRs: novo ADR com `supersedes` marca o anterior como `superseded`
+      (justificativa preservada, relação `supersedes`, confirmação `supersede_decision`); `superseded_by` é gerenciado pelo Core
+- [x] Contradições: detecção heurística de polaridade oposta (`possible_contradiction`, com `temporal`) e
+      `change.replaces` para substituir uma afirmação específica preservando-a em `## Histórico`
+- [x] Fatos x hipóteses: `change.certainty: hypothesis` → `_(Hipótese — não confirmada)_`; `read` lista `unconfirmed`
+- [x] Projetos: status permitidos (enum), `milestones` (marco/entrega com data e histórico de mudanças),
+      `blockers` (abrir/resolver), avisos de status x bloqueios; `projects list|milestones|blockers`
+- [x] Pessoas/times: `resolve <termo>` (homônimos/siglas → `AMBIGUOUS_MATCH`), `memberships` (início/fim em
+      projetos e times, espelhado na nota do projeto/time; `read` mostra membros atuais e anteriores)
+- [x] Privacidade: credenciais recusadas (`PERMISSION_DENIED`, também na inbox); saúde, família e avaliações
+      pessoais exigem confirmação (`sensitive_content`)
+- [x] Renomear/mover atualiza links Markdown e `entities` de notas vinculadas
+- [x] Exclusão controlada (`memory.delete`): exige `allow_destructive_operations` + confirmação `destructive`
+      (inclusive no modo autônomo); remove referências por ID em outras notas
+- [x] Lacunas: `suggested_gaps` no plano/resultado (ADR sem justificativa, projeto sem objetivo/responsável,
+      projeto bloqueado sem motivo...), nunca repetindo campos já registrados ou adiados
+- [x] Testes: classificação (conhecido/desconhecido, sigla ambígua, homônimos, duplicado, contraditório),
+      CV-006, CV-010–CV-014, CV-031–CV-035, CV-037–CV-040, privacidade, renomeação, exclusão (144 testes)
 
 ## Etapa 4 — Módulos operacionais ⬜
+
+> **Ponto de partida (handoff da Etapa 3):**
+> - Modelos já existem: `models/agenda.py` (`Appointment`, `AgendaFile`, `history`) e `models/tasks.py`
+>   (`Task`, `TasksFile`, `OPEN_STATUSES`); leitura em `services/records.py` (ainda sem escrita).
+> - Escritas devem seguir o padrão de `services/proposals.py`/`inbox.py`: `Transaction` (lock + WAL +
+>   diário + commit), `request_id` idempotente, `privacy.scan`/`guard_credentials` nos textos.
+> - Datas: `vault.now()` no fuso configurado; `CONTEXT_VAULT_NOW` nos testes (fixo em 2026-10-20 09:00 -03:00).
+> - Reuniões são notas `meeting` (`reunioes/AAAA/MM/`, template em `services/templates.py`); correções de ata
+>   podem reutilizar `SectionEditor.replace/retract` (histórico preservado).
+> - Pendente da Etapa 3: `memory.delete` só avisa (`warnings`) sobre tarefas/compromissos que referenciam a nota
+>   excluída — tratar quando houver escrita de tarefas/agenda.
+> - Cenários do catálogo: grupos C (CV-016–CV-027), G (CV-041–CV-045) e H (CV-046–CV-051+).
 
 - [ ] Agenda: `agenda/AAAA/MM.yaml`, `add`, `list --date/--from/--to`, `update`, `cancel`, `complete`
 - [ ] Detecção de conflitos (alerta, não bloqueia)
@@ -131,3 +152,4 @@ uv run context-vault --help  # CLI
 |------|-------|--------|
 | 2026-10-20 | 1 | Fundação: projeto Python, config, modelos, segurança de caminhos, Git, `init`/`status`/`validate`, testes. |
 | 2026-10-20 | 2 | Memória: editor de seções, transações com WAL/lock, diário, índices, catálogo em cache, busca híbrida, `read`, `propose`/`apply`, idempotência, inbox, lacunas. 97 testes. |
+| 2026-10-20 | 3 | Conhecimento: ADRs substituídos, contradições + `replaces`, hipóteses, marcos/entregas/bloqueios, vínculos pessoa↔projeto/time, `resolve`, filtros de privacidade, referências ao renomear/mover, `memory.delete`, lacunas sugeridas, `projects …`. 144 testes. |

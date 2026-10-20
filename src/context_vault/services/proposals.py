@@ -17,24 +17,33 @@ from pydantic import ValidationError as PydanticValidationError
 from ..errors import (
     ConfirmationRequiredError,
     NotFoundError,
+    PermissionDeniedError,
     RevisionConflictError,
     ValidationError,
 )
 from ..ids import new_id
-from ..models.common import GapStatus, KnowledgeGap, Relation, SourceType
+from ..models.common import GapStatus, KnowledgeGap, Relation, RelationType, SourceType
 from ..models.notes import NOTE_CLASSES, NoteBase, NoteType
-from ..models.proposal import ChangeMode, ConfidenceLevel, Proposal, ProposalOperation, SectionChange
+from ..models.proposal import Certainty, ChangeMode, ConfidenceLevel, Proposal, ProposalOperation, SectionChange
 from ..search.catalog import Catalog
 from ..storage.markdown import SectionEditor, normalize_title, provenance_comment, render_template
 from ..storage.yamlio import revision_of
+from . import knowledge, privacy
+from .contradictions import find_contradictions
 from .journal import Event, load_requests, payload_hash
 from .notes import Note, default_filename, load_note_file, note_directory, render_note, unique_path
 from .templates import TEMPLATES
+from .references import unlink, update_references
 from .transaction import Transaction
 from .vault import Vault, expected_type_for
+from .workspace import Workspace
 
-PROTECTED_META = {"id", "type", "schema_version", "created_at", "updated_at", "relations", "knowledge_gaps"}
+PROTECTED_META = {"id", "type", "schema_version", "created_at", "updated_at", "relations", "knowledge_gaps",
+                  "superseded_by", "milestones", "blockers", "memberships"}
 INFERENCE_PREFIX = "_(Inferência — não confirmada)_ "
+HYPOTHESIS_PREFIX = "_(Hipótese — não confirmada)_ "
+DELETE_WARNING = ("O histórico Git local ainda contém versões anteriores da nota. A remoção completa de dados "
+                  "sensíveis exige um procedimento específico de sanitização do histórico e dos backups.")
 
 
 @dataclass
@@ -55,6 +64,12 @@ class Plan:
     warnings: list[str] = field(default_factory=list)
     summary: str = ""
     event_id: str = field(default_factory=new_id)
+    revisions: dict[str, str] = field(default_factory=dict)  # secondary files -> revision read
+    related_changes: list[dict[str, Any]] = field(default_factory=list)
+    contradictions: list[dict[str, Any]] = field(default_factory=list)
+    sensitive: list[dict[str, Any]] = field(default_factory=list)
+    suggested_gaps: list[dict[str, Any]] = field(default_factory=list)
+    structured: list[str] = field(default_factory=list)
 
     @property
     def requires_confirmation(self) -> bool:
@@ -91,6 +106,9 @@ class Plan:
             data["possible_duplicates"] = self.candidates
         if self.warnings:
             data["warnings"] = self.warnings
+        for key in ("related_changes", "contradictions", "sensitive", "suggested_gaps", "structured"):
+            if getattr(self, key):
+                data[key] = getattr(self, key)
         if include_diff:
             data["diff"] = self.diff()
         return data
@@ -174,9 +192,28 @@ def _apply_gaps(meta_dict: dict[str, Any], proposal: Proposal, now: Any) -> bool
 
 def _content_for(change: SectionChange, proposal: Proposal) -> str:
     content = change.content.strip()
-    if proposal.source.type == SourceType.AGENT_INFERENCE and not content.startswith(INFERENCE_PREFIX):
-        content = INFERENCE_PREFIX + content
-    return content
+    if proposal.source.type == SourceType.AGENT_INFERENCE:
+        prefix = INFERENCE_PREFIX
+    elif change.certainty is Certainty.HYPOTHESIS:
+        prefix = HYPOTHESIS_PREFIX
+    else:
+        return content
+    return content if content.startswith(prefix) else prefix + content
+
+
+def _proposal_texts(proposal: Proposal) -> list[str]:
+    """Every free text a proposal would store (for the privacy filters)."""
+    texts = [c.content for c in proposal.all_changes()]
+    texts += [proposal.reason or "", proposal.new_title or "", proposal.source.original_text or ""]
+    if proposal.note:
+        texts += [proposal.note.title, proposal.note.description or "", *proposal.note.aliases,
+                  *proposal.note.entities, *(str(v) for v in proposal.note.extra.values())]
+    texts += [str(v) for v in proposal.meta.values()]
+    texts += [g.question or "" for g in proposal.add_gaps] + [r.answer or "" for r in proposal.resolve_gaps]
+    texts += [f"{m.title or ''} {m.note or ''}" for m in proposal.milestones]
+    texts += [f"{b.description or ''} {b.resolution or ''}" for b in proposal.blockers]
+    texts += [f"{m.role or ''} {m.note or ''}" for m in proposal.memberships]
+    return [t for t in texts if t]
 
 
 def _provenance(plan: Plan, proposal: Proposal, at: str) -> str:
@@ -215,6 +252,15 @@ def _confirmation(vault: Vault, proposal: Proposal, plan: Plan, *, is_create: bo
         reasons.append("archive")
     if proposal.classification and proposal.classification.level is not ConfidenceLevel.HIGH and plan.changed:
         reasons.append(f"{proposal.classification.level.value}_confidence")
+    if plan.contradictions:
+        reasons.append("possible_contradiction")
+    if plan.sensitive:
+        reasons.append("sensitive_content")
+    if any("substituída por" in c for rc in plan.related_changes for c in rc["changes"]) \
+            and behavior.confirm_conflicting_updates:
+        reasons.append("supersede_decision")
+    if proposal.operation is ProposalOperation.MEMORY_DELETE:
+        reasons.append("destructive")
     # Dedupe preserving order.
     plan.confirmation_reasons = list(dict.fromkeys(reasons))
 
@@ -230,6 +276,13 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
     at = proposal.source.recorded_at.isoformat()
     result = Plan(proposal=proposal, operation=proposal.operation.value)
     op = proposal.operation
+    result.sensitive = privacy.scan(_proposal_texts(proposal))
+    if op is ProposalOperation.MEMORY_DELETE and not vault.config.security.allow_destructive_operations:
+        raise PermissionDeniedError(
+            "Exclusão desabilitada: defina security.allow_destructive_operations: true no config.yaml "
+            "ou use memory.archive.",
+            details={"setting": "security.allow_destructive_operations"},
+        )
 
     if op is ProposalOperation.MEMORY_CREATE:
         _plan_create(vault, proposal, catalog, result, now, at, reserved or set())
@@ -250,53 +303,75 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
             details={"path": note.path, "expected_revision": proposal.expected_revision, "current_revision": note.revision},
         )
 
+    ws = Workspace(vault, catalog, note.meta.id)
+    label = now.date().isoformat()
+    prov = _provenance(result, proposal, at)
     has_replace = False
     meta = note.meta.model_dump(mode="python")
     editor = SectionEditor(note.body)
     body_changed = False
     meta_changed = False
+    old_status = meta.get("status")
+    old_supersedes = list(meta.get("supersedes") or [])
+
+    if op is ProposalOperation.MEMORY_DELETE:
+        unlink(ws, catalog, note.meta.id)
+        ws.finalize(result, now, _validate_meta)
+        result.files[note.path] = None
+        result.changed = True
+        result.warnings.append(DELETE_WARNING)
+        result.warnings += _records_referencing(vault, note.meta.id)
+        result.summary = f"Excluir {meta['type']} {note.meta.id} ({note.path})"
+        _confirmation(vault, proposal, result, is_create=False, has_replace=False)
+        return result
 
     if op in (ProposalOperation.MEMORY_UPSERT, ProposalOperation.MEMORY_CORRECT):
-        all_dup = True
+        statements = editor.current_statements()
+        all_dup = bool(proposal.all_changes())
         for change in proposal.all_changes():
             content = _content_for(change, proposal)
-            prov = _provenance(result, proposal, at)
             if op is ProposalOperation.MEMORY_CORRECT or change.mode is ChangeMode.REPLACE:
                 has_replace = True
                 edit = editor.replace(change.section, content, subsection=change.subsection, provenance=prov,
-                                      history_label=now.date().isoformat(), reason=proposal.reason)
+                                      history_label=label, reason=proposal.reason)
             else:
+                if change.replaces:
+                    has_replace = True
+                    removed = editor.retract(change.replaces, history_label=label, reason=proposal.reason,
+                                             provenance=prov)
+                    if removed is None:
+                        raise ValidationError("Afirmação a substituir não encontrada no estado atual da nota",
+                                              details={"replaces": change.replaces, "path": note.path})
+                    body_changed = True
+                elif change.certainty is Certainty.FACT and proposal.source.type != SourceType.AGENT_INFERENCE:
+                    for found in find_contradictions(statements, change.content):
+                        result.contradictions.append({**found, "target_section": change.section})
                 edit = editor.add(change.section, content, subsection=change.subsection, mode=change.mode.value,
-                                  provenance=prov)
+                                  provenance=prov, match=change.content)
             if edit.duplicate:
                 result.duplicates.append({"section": change.section, "subsection": change.subsection,
                                           "content": change.content})
             else:
                 all_dup = False
                 body_changed = True
-        result.duplicate = all_dup
+        result.duplicate = all_dup and not proposal.has_structured()
         if proposal.meta:
             meta_changed |= _merge_meta(meta, proposal.meta, additive=True)
     elif op is ProposalOperation.MEMORY_UPDATE_META:
         if proposal.meta:
-            old_status = meta.get("status")
             meta_changed |= _merge_meta(meta, proposal.meta, additive=False)
-            new_status = meta.get("status")
-            if new_status != old_status and new_status is not None:
-                editor.append_history(f"### {now.date().isoformat()} — Status alterado de "
-                                      f"`{_v(old_status)}` para `{_v(new_status)}`"
-                                      + (f"\n\nMotivo: {proposal.reason}" if proposal.reason else "")
-                                      + f"\n{_provenance(result, proposal, at)}")
-                body_changed = True
     elif op is ProposalOperation.MEMORY_RENAME:
         new_title = proposal.new_title.strip()  # type: ignore[union-attr]
         if new_title != meta["title"]:
             meta["aliases"] = _merge_list(meta.get("aliases", []), [meta["title"]])
             meta["aliases"] = [a for a in meta["aliases"] if normalize_title(a) != normalize_title(new_title)]
             meta["title"] = new_title
-            editor.set_title(new_title)
-            editor.append_history(f"### {now.date().isoformat()} — Renomeada de \"{note.meta.title}\" para \"{new_title}\""
-                                  f"\n{_provenance(result, proposal, at)}")
+            heading = new_title
+            if meta["type"] == NoteType.ARCHITECTURE_DECISION.value:
+                heading = f"ADR-{meta['adr_number']:04d} — {new_title}"
+            editor.set_title(heading)
+            editor.append_history(f"### {label} — Renomeada de \"{note.meta.title}\" para \"{new_title}\""
+                                  f"\n{prov}")
             body_changed = meta_changed = True
             note_type = NoteType(meta["type"])
             if note_type not in (NoteType.MEETING,):
@@ -305,6 +380,8 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
                 filename = default_filename(note_type, tmp_meta)
                 if f"{directory}/{filename}" != note.path:
                     result.path = unique_path(vault, directory, filename, reserved)
+            update_references(ws, catalog, note.meta.id, old_title=note.meta.title, new_title=new_title,
+                              old_path=note.path, new_path=result.path)  # type: ignore[arg-type]
     elif op is ProposalOperation.MEMORY_MOVE:
         new_path = proposal.new_path.strip().replace("\\", "/")  # type: ignore[union-attr]
         vault.path(new_path)
@@ -321,15 +398,29 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
                 raise ValidationError(f"Já existe um arquivo em {new_path}")
             result.path = new_path
             meta_changed = True
+            update_references(ws, catalog, note.meta.id, old_title=note.meta.title, new_title=note.meta.title,
+                              old_path=note.path, new_path=new_path)
     elif op is ProposalOperation.MEMORY_ARCHIVE:
         if meta.get("status") != "archived":
             meta["status"] = "archived"
-            editor.append_history(f"### {now.date().isoformat()} — Arquivada"
+            editor.append_history(f"### {label} — Arquivada"
                                   + (f"\n\nMotivo: {proposal.reason}" if proposal.reason else "")
-                                  + f"\n{_provenance(result, proposal, at)}")
+                                  + f"\n{prov}")
             body_changed = meta_changed = True
+            old_status = "archived"  # history already written
     elif op is ProposalOperation.MEMORY_RELATE:
         pass
+
+    if proposal.has_structured():
+        changed = _plan_structured(proposal, meta, editor, catalog, ws, note.meta.id, now, prov, label, result)
+        body_changed |= changed
+        meta_changed |= changed
+
+    new_status = meta.get("status")
+    if _v(new_status) != _v(old_status) and new_status is not None:
+        editor.append_history(f"### {label} — Status alterado de `{_v(old_status)}` para `{_v(new_status)}`"
+                              + (f"\n\nMotivo: {proposal.reason}" if proposal.reason else "") + f"\n{prov}")
+        body_changed = True
 
     if proposal.relations:
         _check_targets(catalog, [r.target_id for r in proposal.relations], note.meta.id)
@@ -340,20 +431,111 @@ def plan(vault: Vault, proposal: Proposal, *, catalog: Catalog | None = None, re
             meta_changed = True
     if proposal.add_gaps or proposal.resolve_gaps:
         meta_changed |= _apply_gaps(meta, proposal, now)
+    if meta["type"] == NoteType.ARCHITECTURE_DECISION.value:
+        meta_changed |= _plan_supersede(ws, catalog, meta, old_supersedes, label, prov)
 
     if body_changed or meta_changed:
         meta["updated_at"] = now
         new_meta = _validate_meta(NOTE_CLASSES[NoteType(meta["type"])], meta)
-        if new_meta.related_ids:
-            _check_targets(catalog, list(new_meta.related_ids), new_meta.id)
+        _check_targets(catalog, new_meta.referenced_ids(), new_meta.id)
         text = render_note(new_meta, editor.body if body_changed else note.body)
         if result.path != note.path:
             result.files[note.path] = None
         result.files[result.path] = text  # type: ignore[index]
         result.changed = True
+    ws.finalize(result, now, _validate_meta)
+    result.changed |= bool(result.related_changes)
+    if result.changed:
+        result.duplicate = False
+    if op not in (ProposalOperation.MEMORY_ARCHIVE, ProposalOperation.MEMORY_MOVE):
+        result.warnings += knowledge.blocker_warnings(meta)
+        result.suggested_gaps = knowledge.suggest_gaps(meta, editor.body)
     result.summary = _summary(op, note.meta.title, result)
     _confirmation(vault, proposal, result, is_create=False, has_replace=has_replace)
     return result
+
+
+def _plan_structured(proposal: Proposal, meta: dict[str, Any], editor: SectionEditor, catalog: Catalog,
+                     ws: Workspace, self_id: str, now: Any, prov: str, label: str, result: Plan) -> bool:
+    note_type = meta["type"]
+    if (proposal.milestones or proposal.blockers) and note_type != NoteType.PROJECT.value:
+        raise ValidationError("'milestones' e 'blockers' só se aplicam a projetos")
+    if proposal.memberships and note_type != NoteType.PERSON.value:
+        raise ValidationError("'memberships' só se aplica a pessoas")
+    before = (len(result.structured), editor.body)
+    if proposal.milestones:
+        result.structured += knowledge.apply_milestones(meta, proposal.milestones, editor, now, prov, label)
+    if proposal.blockers:
+        _check_targets(catalog, [i for b in proposal.blockers for i in b.related_ids], self_id)
+        result.structured += knowledge.apply_blockers(meta, proposal.blockers, editor, now, prov, label)
+    if proposal.memberships:
+        titles = {}
+        for change in proposal.memberships:
+            target = catalog.get(change.target_id)
+            if target is None:
+                raise ValidationError("Participação em ID inexistente", details={"missing_ids": [change.target_id]})
+            if target.type != change.kind:
+                raise ValidationError(f"O alvo {change.target_id} é '{target.type}', não '{change.kind}'")
+            titles[change.target_id] = target.title
+        effective = knowledge.apply_memberships(meta, proposal.memberships, editor, now, prov, label, titles)
+        relations = [Relation.model_validate(r) if isinstance(r, dict) else r for r in meta.get("relations", [])]
+        for change in effective:
+            rel_type = RelationType.PARTICIPATES_IN if change["kind"] == "project" else RelationType.PART_OF
+            relations = _merge_relations(relations, [Relation(type=rel_type, target_id=change["target_id"])])
+            target = ws.get(change["target_id"])
+            knowledge.sync_membership_target(target.meta, target.editor, self_id, meta["title"], change, prov, label)
+            verb = {"start": "início", "end": "encerramento", "role": "função"}[change["action"]]
+            target.touch(f"participação de {meta['title']}: {verb}", body=True)
+            result.structured.append(f"Participação em \"{titles[change['target_id']]}\": {verb}")
+        meta["relations"] = relations
+    return (len(result.structured), editor.body) != before
+
+
+def _plan_supersede(ws: Workspace, catalog: Catalog, meta: dict[str, Any], old: list[str], label: str,
+                    prov: str) -> bool:
+    """New ids in `supersedes` mark those ADRs as superseded by this one (spec §9.6)."""
+    added = [i for i in meta.get("supersedes") or [] if i not in old]
+    if not added:
+        return False
+    relations = [Relation.model_validate(r) if isinstance(r, dict) else r for r in meta.get("relations", [])]
+    for old_id in added:
+        if old_id == meta["id"]:
+            raise ValidationError("Um ADR não pode substituir a si mesmo")
+        target = catalog.get(old_id)
+        if target is None or target.type != NoteType.ARCHITECTURE_DECISION.value:
+            raise ValidationError(f"'supersedes' deve apontar para um ADR existente: {old_id}")
+        other = ws.get(old_id)
+        current = other.meta.get("superseded_by")
+        if current and current != meta["id"]:
+            raise ValidationError(f"ADR {old_id} já foi substituído por {current}",
+                                  details={"superseded_by": current})
+        number = f"ADR-{meta['adr_number']:04d}"
+        if current != meta["id"]:
+            previous_status = _v(other.meta.get("status"))
+            other.meta["superseded_by"] = meta["id"]
+            other.meta["status"] = "superseded"
+            other.editor.append_history(
+                f"### {label} — Substituída por {number} — {meta['title']}\n\n"
+                f"Status anterior: `{previous_status}`. A decisão e a justificativa originais foram preservadas."
+                f"\n{prov}")
+            other.touch(f"substituída por {number}", body=True)
+        relations = _merge_relations(relations, [Relation(type=RelationType.SUPERSEDES, target_id=old_id)])
+    meta["relations"] = relations
+    return True
+
+
+def _records_referencing(vault: Vault, note_id: str) -> list[str]:
+    from .records import load_appointments, load_tasks
+
+    tasks = [t.id for t in load_tasks(vault) if note_id in (*t.related_ids, *t.blocked_by, t.assignee_id,
+                                                              t.source_meeting_id)]
+    appts = [a.id for _, a in load_appointments(vault) if note_id in (*a.related_ids, a.meeting_id)]
+    out = []
+    if tasks:
+        out.append(f"Pendências ainda referenciam a nota excluída: {', '.join(tasks)}")
+    if appts:
+        out.append(f"Compromissos ainda referenciam a nota excluída: {', '.join(appts)}")
+    return out
 
 
 def _v(value: Any) -> str:
@@ -399,7 +581,7 @@ def _plan_create(vault: Vault, proposal: Proposal, catalog: Catalog, result: Pla
     if note_type is NoteType.MEETING and "timezone" not in data:
         data["timezone"] = vault.timezone
     meta = _validate_meta(cls, data)
-    _check_targets(catalog, meta.all_related_ids())
+    _check_targets(catalog, meta.referenced_ids())
     if note_type is NoteType.ARCHITECTURE_DECISION:
         taken = [e for e in catalog.valid() if e.type == "architecture_decision"
                  and (e.meta or {}).get("adr_number") == getattr(meta, "adr_number")]
@@ -409,14 +591,22 @@ def _plan_create(vault: Vault, proposal: Proposal, catalog: Catalog, result: Pla
 
     title = meta.title if note_type is not NoteType.ARCHITECTURE_DECISION else f"ADR-{getattr(meta, 'adr_number'):04d} — {meta.title}"
     editor = SectionEditor(render_template(title, TEMPLATES[note_type]))
+    prov = _provenance(result, proposal, at)
+    label = now.date().isoformat()
     for change in proposal.all_changes():
-        prov = _provenance(result, proposal, at)
+        if change.replaces:
+            raise ValidationError("'replaces' não se aplica a memory.create")
         editor.add(change.section, _content_for(change, proposal), subsection=change.subsection,
                    mode="append", provenance=prov)
+    meta_dict = meta.model_dump(mode="python")
     if proposal.add_gaps:
-        meta_dict = meta.model_dump(mode="python")
         _apply_gaps(meta_dict, proposal, now)
-        meta = _validate_meta(cls, meta_dict)
+    ws = Workspace(vault, catalog, meta.id)
+    if proposal.has_structured():
+        _plan_structured(proposal, meta_dict, editor, catalog, ws, meta.id, now, prov, label, result)
+    if note_type is NoteType.ARCHITECTURE_DECISION:
+        _plan_supersede(ws, catalog, meta_dict, [], label, prov)
+    meta = _validate_meta(cls, meta_dict)
 
     directory = note_directory(note_type, meta)
     rel = unique_path(vault, directory, default_filename(note_type, meta, spec.slug), reserved)
@@ -424,7 +614,10 @@ def _plan_create(vault: Vault, proposal: Proposal, catalog: Catalog, result: Pla
     result.path = rel
     result.originals[rel] = None
     result.files[rel] = render_note(meta, editor.body)
+    ws.finalize(result, now, _validate_meta)
     result.changed = True
+    result.warnings += knowledge.blocker_warnings(meta_dict)
+    result.suggested_gaps = knowledge.suggest_gaps(meta_dict, editor.body)
     result.summary = f"Criar {note_type.value} \"{meta.title}\" em {rel}"
 
 
@@ -439,6 +632,7 @@ def _summary(op: ProposalOperation, title: str, plan: Plan) -> str:
         ProposalOperation.MEMORY_ARCHIVE: "Arquivar",
         ProposalOperation.MEMORY_RELATE: "Relacionar",
         ProposalOperation.MEMORY_UPDATE_META: "Atualizar metadados de",
+        ProposalOperation.MEMORY_DELETE: "Excluir",
     }
     text = f"{labels.get(op, op.value)} \"{title}\" ({plan.path})"
     if plan.old_path and plan.path != plan.old_path:
@@ -478,6 +672,8 @@ def apply(vault: Vault, proposal: Proposal, *, lock_timeout: float | None = None
             )
         if result.path and result.current_revision:
             tx.check_revision(result.old_path or result.path, result.current_revision)
+        for rel, revision in result.revisions.items():
+            tx.check_revision(rel, revision)
         for rel, content in result.files.items():
             if content is None:
                 tx.delete(rel)
@@ -498,6 +694,9 @@ def apply(vault: Vault, proposal: Proposal, *, lock_timeout: float | None = None
                 "duplicates": result.duplicates or None,
                 "old_path": result.old_path if result.old_path != result.path else None,
                 "reason": proposal.reason,
+                "related_paths": [c["path"] for c in result.related_changes] or None,
+                "contradictions": result.contradictions or None,
+                "structured": result.structured or None,
             }.items() if v},
         )
         tx.record(event)
@@ -517,6 +716,9 @@ def apply(vault: Vault, proposal: Proposal, *, lock_timeout: float | None = None
             output["duplicates"] = result.duplicates
         if result.warnings:
             output["warnings"] = result.warnings
+        for key in ("related_changes", "structured", "suggested_gaps"):
+            if getattr(result, key):
+                output[key] = getattr(result, key)
         tx.record_request({"request_id": proposal.request_id, "payload_hash": req_hash, "event_id": result.event_id,
                            "operation": proposal.operation.value, "at": vault.now().isoformat(),
                            "result": {**output, "commit": None}})

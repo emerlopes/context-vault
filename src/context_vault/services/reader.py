@@ -89,6 +89,17 @@ def read_record(vault: Vault, ref: str, *, history: bool = False) -> dict[str, A
             "backlinks": backlinks, "tasks": tasks, "appointments": appts,
             "open_gaps": [g.model_dump(mode="json") for g in meta.knowledge_gaps if g.status.value != "resolved"],
         }
+        unconfirmed = unconfirmed_statements(note.body)
+        if unconfirmed:
+            data["unconfirmed"] = unconfirmed
+        if meta.type in ("project", "team"):
+            data["members"] = members_of(catalog, rid)
+        if meta.type == "architecture_decision":
+            data["decision"] = {
+                "status": meta.status.value,  # type: ignore[attr-defined]
+                "superseded_by": _brief(catalog, meta.superseded_by) if meta.superseded_by else None,  # type: ignore[attr-defined]
+                "supersedes": [_brief(catalog, i) for i in meta.supersedes],  # type: ignore[attr-defined]
+            }
         if history:
             data["history"] = {
                 "commits": [{"hash": c.short, "message": c.message, "date": c.date}
@@ -110,6 +121,35 @@ def read_record(vault: Vault, ref: str, *, history: bool = False) -> dict[str, A
     if history:
         data["history"] = {"events": events_for(vault, rid)}
     return data
+
+
+def unconfirmed_statements(body: str) -> list[dict[str, str]]:
+    """Hypotheses and agent inferences in the current state (facts vs. hypotheses, rule R07)."""
+    from ..storage.markdown import SectionEditor
+    from .contradictions import is_unconfirmed
+
+    out = []
+    for section, line in SectionEditor(body).current_statements():
+        if is_unconfirmed(line):
+            kind = "inference" if "infer" in line.lower() else "hypothesis"
+            out.append({"section": section, "kind": kind, "text": line})
+    return out
+
+
+def members_of(catalog: Catalog, note_id: str) -> dict[str, list[dict[str, Any]]]:
+    """People currently and previously participating in a project/team (from person memberships)."""
+    current, past = [], []
+    for entry in catalog.valid():
+        meta = entry.meta or {}
+        if meta.get("type") != "person":
+            continue
+        for m in meta.get("memberships", []):
+            if m.get("target_id") != note_id:
+                continue
+            item = {"id": entry.id, "title": entry.title, "role": m.get("role"), "start_date": m.get("start_date"),
+                    "end_date": m.get("end_date")}
+            (past if m.get("end_date") else current).append({k: v for k, v in item.items() if v is not None})
+    return {"current": current, "past": past}
 
 
 def list_gaps(vault: Vault, ref: str | None = None, include_resolved: bool = False) -> list[dict[str, Any]]:

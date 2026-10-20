@@ -89,6 +89,70 @@ class NoteBase(Model):
             seen.setdefault(rel.target_id, None)
         return list(seen)
 
+    def referenced_ids(self) -> list[str]:
+        """Every note id this record points to (relations plus type-specific id fields)."""
+        return list(dict.fromkeys(self.all_related_ids() + self._extra_ids()))
+
+    def _extra_ids(self) -> list[str]:
+        return []
+
+
+class ChangeEntry(Model):
+    """One traceable change of a structured item (e.g. a milestone date moved)."""
+
+    at: AwareDatetime
+    field: str
+    previous: str | None = None
+    value: str | None = None
+
+
+class MilestoneStatus(str, Enum):
+    PLANNED = "planned"
+    DONE = "done"
+    MISSED = "missed"
+    CANCELLED = "cancelled"
+
+
+class Milestone(Model):
+    id: EntityId
+    kind: Literal["milestone", "delivery"] = "milestone"
+    title: str = Field(min_length=1)
+    due_date: date | None = None
+    status: MilestoneStatus = MilestoneStatus.PLANNED
+    completed_on: date | None = None
+    note: str | None = None
+    history: list[ChangeEntry] = Field(default_factory=list)
+
+
+class BlockerStatus(str, Enum):
+    OPEN = "open"
+    RESOLVED = "resolved"
+
+
+class Blocker(Model):
+    id: EntityId
+    description: str = Field(min_length=1)
+    status: BlockerStatus = BlockerStatus.OPEN
+    related_ids: list[EntityId] = Field(default_factory=list)
+    since: date | None = None
+    resolved_on: date | None = None
+    resolution: str | None = None
+
+
+class Membership(Model):
+    """Participation of a person in a project or team. `end_date` empty = current."""
+
+    kind: Literal["project", "team"]
+    target_id: EntityId
+    role: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    note: str | None = None
+
+    @property
+    def current(self) -> bool:
+        return self.end_date is None
+
 
 class DomainNote(NoteBase):
     type: Literal["domain"] = "domain"
@@ -103,6 +167,11 @@ class ProjectNote(NoteBase):
     start_date: date | None = None
     target_date: date | None = None
     priority: Priority | None = None
+    milestones: list[Milestone] = Field(default_factory=list)
+    blockers: list[Blocker] = Field(default_factory=list)
+
+    def _extra_ids(self) -> list[str]:
+        return list(self.team_ids) + [i for b in self.blockers for i in b.related_ids]
 
 
 class ArchitectureNote(NoteBase):
@@ -118,6 +187,9 @@ class ArchitectureDecision(NoteBase):
     supersedes: list[EntityId] = Field(default_factory=list)
     superseded_by: EntityId | None = None
 
+    def _extra_ids(self) -> list[str]:
+        return list(self.supersedes) + ([self.superseded_by] if self.superseded_by else [])
+
 
 class PersonNote(NoteBase):
     type: Literal["person"] = "person"
@@ -125,6 +197,10 @@ class PersonNote(NoteBase):
     role: str | None = None
     team_ids: list[EntityId] = Field(default_factory=list)
     responsibilities: list[str] = Field(default_factory=list)
+    memberships: list[Membership] = Field(default_factory=list)
+
+    def _extra_ids(self) -> list[str]:
+        return list(self.team_ids) + [m.target_id for m in self.memberships]
 
 
 class TeamNote(NoteBase):
@@ -132,6 +208,9 @@ class TeamNote(NoteBase):
     status: KnowledgeStatus = KnowledgeStatus.ACTIVE
     member_ids: list[EntityId] = Field(default_factory=list)
     responsibilities: list[str] = Field(default_factory=list)
+
+    def _extra_ids(self) -> list[str]:
+        return list(self.member_ids)
 
 
 class MeetingNote(NoteBase):
@@ -144,6 +223,9 @@ class MeetingNote(NoteBase):
     participants: list[str] = Field(default_factory=list)
     participant_ids: list[EntityId] = Field(default_factory=list)
     appointment_id: EntityId | None = None
+
+    def _extra_ids(self) -> list[str]:
+        return list(self.participant_ids)
 
     @field_validator("start_time", "end_time")
     @classmethod

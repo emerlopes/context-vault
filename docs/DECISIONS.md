@@ -158,3 +158,72 @@ usuário adiou e o agente não deve repetir a pergunta sem nova necessidade.
 
 `read` aceita ID completo, prefixo com 8+ caracteres (`AMBIGUOUS_MATCH` se houver mais de um) ou
 caminho relativo da nota.
+
+## D19 — Planos com várias notas
+
+Uma proposta pode alterar notas secundárias (ADR substituído, projeto/time de uma pessoa, notas com
+links para a renomeada, notas que referenciam a excluída). Todas entram na mesma transação e no mesmo
+commit; a revisão de cada arquivo secundário é verificada no `apply` (`REVISION_CONFLICT` se mudou).
+O plano lista essas alterações em `related_changes`.
+
+## D20 — Contradições são sinalizadas, não interpretadas
+
+O Core compara cada frase nova com o estado atual da nota (fora de `## Histórico`, ignorando hipóteses
+e inferências). Polaridade oposta (`não`, `nunca`, `deixou de`...) + ao menos 2 termos em comum (≥ 50%)
+→ `contradictions` no plano e confirmação `possible_contradiction`. `temporal: true` quando há marcadores
+como "mais", "agora", "passou a". A forma recomendada de registrar a mudança é `change.replaces` (a linha
+antiga sai do estado atual e vai para `## Histórico` com motivo e origem). `mode: replace`/`memory.correct`
+continuam substituindo a seção inteira.
+
+## D21 — Hipóteses
+
+`change.certainty: hypothesis` grava o texto com `_(Hipótese — não confirmada)_` (inferências do agente
+continuam com `_(Inferência — não confirmada)_`). A deduplicação compara o texto sem o marcador. Para
+confirmar uma hipótese, use `replaces` com o texto da hipótese.
+
+## D22 — Dados estruturados no frontmatter + linha legível no corpo
+
+- Projeto: `milestones` (`kind: milestone|delivery`, `due_date`, `status planned|done|missed|cancelled`,
+  `history` de mudanças) e `blockers` (`open|resolved`, `since`, `resolved_on`, `resolution`).
+- Pessoa: `memberships` (`kind: project|team`, `target_id`, `role`, `start_date`, `end_date`; sem
+  `end_date` = vigente). Times são espelhados em `team_ids` (pessoa) e `member_ids` (time).
+- Esses campos são gerenciados pelo Core (não podem ir em `meta`/`extra`); a proposta usa
+  `milestones`, `blockers` e `memberships`.
+- As seções Marcos/Entregas/Bloqueios/Projetos/Times/Pessoas envolvidas mostram uma linha por item
+  vigente; ao mudar/encerrar, a linha anterior vai para o histórico. O Core não altera o status do
+  projeto sozinho: apenas avisa (`warnings`) sobre status x bloqueios.
+
+## D23 — Resolução de nomes (`resolve`)
+
+Camadas: título/alias exato → primeiro nome de pessoa → entidade de domínio/arquitetura → entidade de
+outras notas. Notas ativas vencem arquivadas/substituídas na mesma camada. Mais de um candidato na camada
+decisiva → `AMBIGUOUS_MATCH` (exit 4) com `candidates`; nenhum → `NOT_FOUND` com `possible` e sugestão de
+inbox.
+
+## D24 — Privacidade
+
+Credenciais (senha/token/chave com valor, chaves privadas, tokens conhecidos, connection strings com
+senha) → `PERMISSION_DENIED` em propostas e na inbox; os valores nunca são ecoados. Saúde, assuntos
+familiares e avaliações pessoais sensíveis → confirmação `sensitive_content` (`sensitive` no plano). Os
+padrões são léxicos e conservadores para evitar falsos positivos em notas técnicas.
+
+## D25 — Renomear e mover
+
+Links Markdown relativos para o caminho antigo são reescritos. Em notas que referenciam a renomeada por
+ID, `entities` igual ao título antigo vira o novo título (exceto se outro registro também usar esse nome).
+Texto livre e histórico não são reescritos; o título antigo vira alias.
+
+## D26 — Exclusão
+
+`memory.delete` exige `security.allow_destructive_operations: true` (senão `PERMISSION_DENIED`) e sempre
+confirmação `destructive`. Remove o arquivo e as referências por ID nas outras notas. Pendências e
+compromissos que ainda apontem para a nota são listados em `warnings` (tratamento automático fica para a
+Etapa 4). O resultado avisa que o histórico Git mantém versões anteriores (spec §23.4).
+
+## D27 — Lacunas sugeridas
+
+`propose`/`apply` devolvem `suggested_gaps` (prioridade alta primeiro) com base no tipo: ADR sem
+justificativa/contexto, projeto sem objetivo/responsável ou bloqueado sem bloqueio aberto, pessoa sem
+função, domínio/arquitetura sem visão geral. O Core nunca as grava sozinho: o agente pergunta (uma por
+vez) ou as registra via `add_gaps` (ex.: `status: deferred` quando o usuário não quer responder). Campos
+com lacuna já registrada — inclusive adiada ou resolvida — não são sugeridos novamente.

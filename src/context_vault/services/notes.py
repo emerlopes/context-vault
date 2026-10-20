@@ -41,12 +41,21 @@ def meta_to_dict(meta: NoteBase) -> dict[str, Any]:
             # Keep the canonical list fields from the spec visible even when empty.
             if key not in ("aliases", "entities", "tags", "related_ids"):
                 continue
-        out[key] = value
+        out[key] = _compact(value)
     for key in tail:
         out[key] = data[key]
     if out.get("description") is None:
         out.pop("description", None)
     return out
+
+
+def _compact(value: Any) -> Any:
+    """Drop empty optional fields inside structured list items (relations, milestones, gaps...)."""
+    if isinstance(value, list):
+        return [_compact(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _compact(v) for k, v in value.items() if v is not None and v != []}
+    return value
 
 
 def render_note(meta: NoteBase, body: str) -> str:

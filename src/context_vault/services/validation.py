@@ -164,7 +164,7 @@ def validate_repository(vault: Vault) -> ValidationReport:
 
     # References
     for rel, meta in notes.values():
-        for target in meta.all_related_ids():
+        for target in meta.referenced_ids():
             if target not in all_ids:
                 report.error("BROKEN_REFERENCE", rel, f"Referência para ID inexistente {target}", target=target)
     if tasks:

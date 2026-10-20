@@ -199,9 +199,12 @@ class SectionEditor:
         self.lines[insert_at:insert_at] = [""] + new_lines + [""]
 
     def add(self, section: str, content: str, *, subsection: str | None = None, mode: str = "merge",
-            provenance: str | None = None) -> SectionEdit:
-        """mode: merge (skip if already present) | append (always add)."""
-        if mode == "merge" and self.contains(section, content, subsection):
+            provenance: str | None = None, match: str | None = None) -> SectionEdit:
+        """mode: merge (skip if already present) | append (always add).
+
+        `match` is the text used for duplicate detection (defaults to `content`); it lets marked
+        content (e.g. a hypothesis prefix) be recognized as already recorded."""
+        if mode == "merge" and self.contains(section, match or content, subsection):
             return SectionEdit(self.body, changed=False, duplicate=True)
         start, end = self.locate(section, subsection, create=True)  # type: ignore[misc]
         block = content.strip("\n")
@@ -251,6 +254,75 @@ class SectionEditor:
 
     def append_history(self, block: str) -> None:
         self._append_history(block)
+
+    def current_ranges(self) -> list[tuple[int, int]]:
+        """Line ranges holding the current state (everything except the Histórico sections)."""
+        heads = headings(self.lines)
+        excluded = [(h.index, _section_end(self.lines, heads, h, len(self.lines)))
+                    for h in heads if h.level == 2 and _is_history(h.title)]
+        ranges, start = [], 0
+        for begin, end in excluded:
+            ranges.append((start, begin))
+            start = end
+        ranges.append((start, len(self.lines)))
+        return ranges
+
+    def current_statements(self) -> list[tuple[str, str]]:
+        """(section title, statement line) pairs from the current state, without provenance."""
+        out: list[tuple[str, str]] = []
+        heads = headings(self.lines)
+        for start, end in self.current_ranges():
+            for i in range(start, end):
+                text = strip_provenance(self.lines[i]).strip()
+                if not text or _HEADING.match(self.lines[i]):
+                    continue
+                section = next((h.title for h in reversed(heads) if h.index < i and h.level == 2), "")
+                out.append((section, text))
+        return out
+
+    def retract(self, statement: str, *, history_label: str, reason: str | None = None,
+                provenance: str | None = None, section: str | None = None) -> str | None:
+        """Remove current-state lines containing `statement` and preserve them under Histórico.
+
+        Without `section` only the first matching line (anywhere in the current state) is removed;
+        with `section` every matching line of that section is. Returns the removed text, or None."""
+        needle = normalize_text(statement)
+        if not needle:
+            return None
+        if section is not None:
+            loc = self.locate(section, create=False)
+            if loc is None:
+                return None
+            ranges = [loc]
+        else:
+            ranges = self.current_ranges()
+        heads = headings(self.lines)
+        hits: list[int] = []
+        for start, end in ranges:
+            for i in range(start, end):
+                if not _HEADING.match(self.lines[i]) and needle in normalize_text(self.lines[i]):
+                    hits.append(i)
+                    if section is None:
+                        break
+            if hits and section is None:
+                break
+        if not hits:
+            return None
+        where = section or next((h.title for h in reversed(heads) if h.index < hits[0] and h.level == 2), "")
+        removed = [strip_provenance(self.lines[i]).strip() for i in hits]
+        for i in reversed(hits):
+            stop = i + 1
+            if stop < len(self.lines) and _CV_COMMENT.fullmatch(self.lines[stop].strip() or "-"):
+                stop += 1
+            del self.lines[i:stop]
+        entry = [f"### {history_label} — Substituído em \"{where}\"", "", "Estado anterior:", ""]
+        entry += [f"> {line}" for line in removed]
+        if reason:
+            entry += ["", f"Motivo: {reason}"]
+        if provenance:
+            entry += [provenance]
+        self._append_history("\n".join(entry))
+        return "\n".join(removed)
 
     def set_title(self, title: str) -> None:
         for head in headings(self.lines):
