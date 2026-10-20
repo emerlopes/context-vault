@@ -1,0 +1,6 @@
+{
+  "name": "context-vault",
+  "version": "0.1.0",
+  "description": "Memória local-first para conhecimento, projetos, arquitetura, pessoas, reuniões, agenda e pendências (requer a CLI context-vault).",
+  "contextFileName": "GEMINI.md"
+}

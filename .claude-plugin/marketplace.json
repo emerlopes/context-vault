@@ -1,0 +1,14 @@
+{
+  "name": "context-vault",
+  "description": "ContextVault: memória local-first para agentes de IA.",
+  "owner": {
+    "name": "emerlopes"
+  },
+  "plugins": [
+    {
+      "name": "context-vault",
+      "source": "./",
+      "description": "Local-first intelligent memory assistant (skill context-vault + CLI)."
+    }
+  ]
+}

@@ -23,6 +23,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/context_vault"]
 
+# The canonical skill ships inside the wheel so `context-vault install-skill` works without a checkout.
+[tool.hatch.build.targets.wheel.force-include]
+"skills/context-vault" = "context_vault/_skill/context-vault"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

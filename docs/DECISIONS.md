@@ -331,3 +331,41 @@ Ambos separam `recorded` (com fontes) de `suggestions` (perguntas e pontos de at
 pendência atrasada/sem responsável/vencendo, dúvida em aberto de reunião anterior, lacuna `unknown`, bloqueio
 aberto, hipótese, objetivo não registrado, conflito de horário), cada sugestão com `basis`. Decisões vêm apenas de
 seções `Decisões` e ADRs — nunca da pauta. O objetivo vem da seção `Objetivo` da nota ou da descrição do compromisso.
+
+
+## D37 — Skill canônica única e pastas de descoberta
+
+`skills/context-vault/` é a única fonte do contrato (spec §24.1); os adaptadores só copiam essa pasta para onde
+cada agente a descobre (documentação oficial consultada em 2026-10-20):
+
+| Agente | Usuário | Projeto |
+|--------|---------|---------|
+| Claude Code | `~/.claude/skills` | `.claude/skills` |
+| OpenAI Codex | `~/.agents/skills` | `.agents/skills` (da pasta atual até a raiz do repositório) |
+| Gemini CLI | `~/.agents/skills` (alias de `~/.gemini/skills`, com precedência) | `.agents/skills` |
+| Devin | `~/.agents/skills` (também `~/.config/devin/skills`) | `.agents/skills` (também `.devin/skills`) |
+
+Codex, Gemini CLI e Devin compartilham `.agents/skills` (padrão Agent Skills), então `--agent all` instala só
+duas cópias (Claude Code + `.agents/skills`); uma segunda cópia numa pasta específica faria o agente ver a skill
+duas vezes (`skill status` avisa). O frontmatter tem só `name` e `description` (spec §18.1; `name` = pasta,
+minúsculas com hífen, descrição ≤ 1024 caracteres). Plugin do Claude Code (`.claude-plugin/`) e extensão do
+Gemini (`gemini-extension.json` + `GEMINI.md`) usam a própria raiz do repositório, cuja pasta `skills/` já é o
+local esperado por ambos.
+
+## D38 — Instalação segura e reversível
+
+Cada cópia recebe `.context-vault-skill.json` com o sha256 de cada arquivo. Reinstalar igual → `unchanged`;
+arquivo editado localmente ou pasta não criada pelo ContextVault → `CONFIRMATION_REQUIRED`
+(`overwrite_modified_skill`, `foreign_skill_directory`, `replace_symlink`) até `--force`. Arquivos que saíram da
+skill são removidos na atualização. `skill uninstall` apaga só arquivos gerenciados e intactos (arquivos do
+usuário ficam em `kept`). `--link` cria link simbólico para a origem (desenvolvimento). A skill é embutida no
+wheel (`context_vault/_skill/`), então `install-skill` funciona sem o checkout.
+
+## D39 — Compartilhamento por zip, sem marketplace
+
+`package-skill` gera um zip determinístico: `context-vault/` (a skill), `INSTALL.md`, `install.sh`,
+`install.ps1` e, com `--wheel`, a CLI em `wheels/`. Os scripts usam `context-vault install-skill` quando a CLI
+está no PATH; sem ela, copiam a pasta (recusam sobrescrever sem `--force`, exit 11) e avisam que a CLI é
+necessária. `--skill-only` gera um zip só com `context-vault/` (upload de skill no app do Claude).
+`install-skill --source <zip>` rejeita caminhos absolutos, `..` e links simbólicos no zip.
+

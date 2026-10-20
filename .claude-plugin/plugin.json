@@ -1,0 +1,9 @@
+{
+  "name": "context-vault",
+  "version": "0.1.0",
+  "description": "Local-first intelligent memory assistant for knowledge, projects, architecture, people, meetings, agenda and tasks (requires the context-vault CLI).",
+  "author": {
+    "name": "emerlopes"
+  },
+  "keywords": ["memory", "knowledge", "meetings", "agenda", "tasks"]
+}

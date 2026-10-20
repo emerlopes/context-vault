@@ -138,18 +138,35 @@ uv run context-vault --help  # CLI
 > - CV-036 ("o que mudou no Orion nesta semana") ainda depende de `journal list` + `read --history`; avaliar um
 >   filtro por período em `context` na Etapa 7 se os cenários exigirem.
 
-## Etapa 6 — Skill e adaptadores ⬜
+## Etapa 6 — Skill e adaptadores ✅
 
-- [ ] `skills/context-vault/SKILL.md` (contrato comportamental)
-- [ ] `references/` — classification, retrieval, agenda, meetings, tasks, conventions
-- [ ] `AGENTS.md` (entrada para agentes compatíveis)
-- [ ] Adaptador Claude Code (skill / plugin)
-- [ ] Adaptador OpenAI Codex (AGENTS.md / skills)
-- [ ] Adaptador Gemini CLI (GEMINI.md / extensão)
-- [ ] Preciso que funciona usando a devin ai cognition, se possivel.
-- [ ] Comando `context-vault install-skill --agent <nome>`
-- [ ] Testes de instalação/descoberta dos adaptadores
-- [ ] Permitir instalação local, para que seja possivel compartilhar via zip a skill para as pessoas elas fazerem a instalção local das skill sem passar por marketplace
+- [x] `skills/context-vault/SKILL.md` (contrato comportamental: pré-voo da CLI, regras invioláveis, roteamento de
+      intenções, captura assistida com perguntas A/B/C e uma por vez, confirmações, erros, política de respostas)
+- [x] `references/` — classification, retrieval, agenda, meetings, tasks, conventions (formatos JSON reais da CLI)
+- [x] `AGENTS.md` na raiz (aponta para a skill, sem duplicá-la) e `AGENTS.md` da memória atualizado
+- [x] Adaptador Claude Code: `~/.claude/skills` ou `.claude/skills` + plugin/marketplace em `.claude-plugin/`
+      (validados com `claude plugin validate`)
+- [x] Adaptador OpenAI Codex: `~/.agents/skills` / `.agents/skills` (+ `AGENTS.md`)
+- [x] Adaptador Gemini CLI: `~/.agents/skills` (alias oficial de `~/.gemini/skills`) + extensão
+      `gemini-extension.json` / `GEMINI.md`
+- [x] Devin (Cognition): `~/.agents/skills` (Devin CLI) e `.agents/skills` commitado no repositório (Devin na nuvem)
+- [x] `context-vault install-skill --agent <claude-code|codex|gemini|devin|agents|all>` (`--scope user|project`,
+      `--project-dir`, `--target`, `--source pasta|zip`, `--force`, `--link`, `--dry-run`), `skill status|uninstall|agents|package`
+- [x] Instalação local por zip: `package-skill` (skill + `INSTALL.md` + `install.sh`/`install.ps1`, opcional `--wheel`;
+      `--skill-only` para upload no Claude) e `install-skill --source <zip>`; skill embutida no wheel
+- [x] Testes de instalação/descoberta: contrato Agent Skills, links/âncoras, comandos e opções citados existem na CLI,
+      manifests, instalação por agente/escopo, alterações locais preservadas, desinstalação, zip seguro, `install.sh`
+      com e sem CLI (270 testes)
+
+> **Ponto de partida (handoff da Etapa 6):**
+> - Código: `src/context_vault/adapters/` (`agents.py` = pastas de descoberta por agente, `installer.py`,
+>   `assets/` = arquivos do zip); CLI em `cli/skills.py`. Skill canônica em `skills/context-vault/`.
+> - **Não validado com agentes reais:** Codex, Gemini CLI e Devin não estão instalados nesta máquina e o
+>   `claude -p` não autenticou (OAuth expirado). Os caminhos seguem a documentação oficial de cada um
+>   (links em `context-vault skill agents`). Validar na Etapa 7/8 com os agentes instalados.
+> - Testes de nível agente (catálogo §18) devem usar a skill como contrato: cada regra R01–R12 está no `SKILL.md`.
+> - `test_documented_commands_exist` falha se a skill citar comando/opção que não existe: mantenha a skill
+>   sincronizada ao mudar a CLI.
 
 ## Etapa 7 — Testes de cenário e robustez ⬜
 
@@ -181,3 +198,4 @@ uv run context-vault --help  # CLI
 | 2026-10-20 | 3 | Conhecimento: ADRs substituídos, contradições + `replaces`, hipóteses, marcos/entregas/bloqueios, vínculos pessoa↔projeto/time, `resolve`, filtros de privacidade, referências ao renomear/mover, `memory.delete`, lacunas sugeridas, `projects …`. 144 testes. |
 | 2026-10-20 | 4 | Operacional: datas relativas (`dates resolve`), agenda com conflitos/reagendamento/cancelamento, pendências com duplicatas/histórico/filtros, reuniões (criação, reunião ativa, anotações com pendências, correções rastreáveis, resumo), exclusão limpando referências, aviso de projeto encerrado. 213 testes. |
 | 2026-10-20 | 5 | Relacionamentos: validação de relações tipadas, `remove_relations`, grafo bidirecional (`related`), síntese por assunto (`context`), `meetings brief` e `daily brief` com registrado x sugestões. 229 testes. |
+| 2026-10-20 | 6 | Skill: `SKILL.md` + 6 referências, `AGENTS.md`/`GEMINI.md`, plugin Claude Code, extensão Gemini, `install-skill` para Claude Code/Codex/Gemini/Devin (pasta compartilhada `.agents/skills`), status/desinstalação seguras, pacote zip com instaladores, skill no wheel, `python -m context_vault`. 270 testes. |
